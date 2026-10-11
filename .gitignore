@@ -5,3 +5,5 @@ logs/
 results/
 *.log
 .env
+lexlaw_cache/
+.pytest_cache/
