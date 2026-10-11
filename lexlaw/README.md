@@ -48,12 +48,31 @@ the package reimplements them and is checked against the printed values.
 |---|---|---|
 | 0 | 10.3 regression | **pass**: every value exact (networks, fingerprints, B0, B1, channel + EM + MAP returns and eta, variant P eta) |
 | 1 | G1 | **pass**: Table 9.4 and Table 9.5 reproduced to the printed digit, all rows (channel, eta = 0.4 tie, variant P, B2, classes without text) |
-| 2 | G2 (language model writes the program) | **not run**: code in `llm/`, needs an API key in `.env` and approval of the calls |
+| 2 | G2 (language model writes the program) | glm-5.3, low effort; 4 programs, each passed Section 4.2 within 2-3 calls (33 calls with the C7 reader, 148k in / 97k out tokens). DSR text: **pass** (links partitioned as the truth in 100% of slots, gap 0.0% / -11.2% vs reference program 0.0% / -11.0%). DSR-Q text level 2: **fails** (83.1% of slots; every temperature requirement line is unparsed because the unit regex stops at "deg"; no check of Section 4.2 sees requirement lines that fail to parse) |
 | 3 | G3 (revision flags) | **fails at level 3**: level 2 passes (tensile flagged 12/12, correct program 12/12, bug + escape -2.5% vs B2 -34.1%); level 3: tensile flagged on 6/12 (need >= 10), correct 12/12, bug + escape -13.1% vs B2 -34.1% |
 | 4 | G4 (DSR-Q) | **(a) fails**: quorum learner without lines -42.5% -> -14.5% by episode 5 (need within 5 points); **(b) passes**: level-3 lines + quorum sentence improve the first episode by +18.4 points |
 | 5 | G5 (rollout budget planner, true model) | **pass**: DSR-A known f=0.15 +13.8% (best static +13.5%), f=0.30 +19.9% (best static +19.8%), DSR-C +2.5%, DSR-A random +12.3% vs asap |
 | 6 | baselines, level 4 | B8 (WS-option on DSR) in `../DSR`: trained 20 x 10 episodes on networks 30-99 (the paper's budget), first-episode gap on networks 0-11 x 8: DSR-C -56.4% (B1 -41.6%), DSR-Q -71.5% (B1 -48.6%), DSR-A -62.6% (B1 -39.7%); seed 0, longer pre-training (allowed by G6b) not run. B4, B5b, B6, B7 and level-4 text not done |
 | 7 | final runs | not started (gates 2-4 are open) |
+
+## All methods on the new problems (`python -m lexlaw.experiments.compare run C|Q|A`)
+
+First episode on networks 0-11 x 8 seeds, K = 20, cap 4; gap to B0 (greedy with the true relation)
+on identical random streams. GA and B0 know the true relation; B1, WS-option and LexLaw do not.
+
+| method | DSR-C | DSR-Q | DSR-A (day 7, f = 0.15) |
+|---|---|---|---|
+| B0 greedy, true relation | 849.0 | 613.1 | 622.2 |
+| GA, true relation | +0.6% ±0.9 | +2.4% ±1.2 | +1.4% ±1.2 |
+| B1 greedy, law-free | -41.6% ±1.5 | -48.6% ±1.6 | -39.7% ±1.8 |
+| WS-option (20 x 10 episodes, seed 0) | -56.4% ±1.4 | -71.5% ±1.6 | -62.6% ±1.6 |
+| LexLaw, LLM program, level 2 | 0.0% | -12.1% ±1.3 | +13.8% ±1.2 |
+| LexLaw, LLM program, level 3 | -11.2% ±0.9 | -26.7% ±1.3 | -1.9% ±1.6 |
+| LexLaw, reference program, level 2 | 0.0% | 0.0% | +13.8% ±1.2 |
+| LexLaw, reference program, level 3 | -11.0% ±0.9 | -26.7% ±1.3 | -0.9% ±1.6 |
+
+DSR-A: LexLaw uses the rollout budget planner (Section 5.2) and B0 spends as soon as possible,
+which is why LexLaw can exceed B0.
 
 Tables 9.1, 9.2, 9.4, 9.5, 9.6 (static rows, run inside G5) and 9.7 are reproduced exactly,
 including standard errors and budget used. Table 9.3 needs the cached slot-by-slot answers of the
