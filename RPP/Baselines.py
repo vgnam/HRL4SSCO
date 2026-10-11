@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import copy
 
 
 class GA:
@@ -53,6 +54,11 @@ class GA:
         return total_reward
 
     def select_parents(self, population, fitness_scores):
+        # shift fitness to be non-negative for roulette-wheel selection
+        finite = [f for f in fitness_scores if f != -float('inf')]
+        min_fitness = min(finite) if finite else 0
+        fitness_scores = [f - min_fitness + 1e-6 if f != -float('inf') else 0
+                          for f in fitness_scores]
         total_fitness = sum(fitness_scores)
         pick = random.uniform(0, total_fitness)
         current = 0
@@ -63,6 +69,7 @@ class GA:
         return population[-1]
 
     def crossover(self, parent1, parent2):
+        parent1, parent2 = copy.deepcopy(parent1), copy.deepcopy(parent2)
         crossover_point = random.randint(1, len(parent1) - 1)
         child1 = parent1[:crossover_point] + parent2[crossover_point:]
         child2 = parent2[:crossover_point] + parent1[crossover_point:]
@@ -119,15 +126,16 @@ class GA:
                 child1, child2 = self.crossover(parent1, parent2)
                 new_population.extend(
                     [self.mutate(child1), self.mutate(child2)])
-            population = new_population
             current_best_fitness = max(fitness_scores)
             current_best_solution = population[fitness_scores.index(
                 current_best_fitness)]
             if current_best_fitness > best_fitness:
                 best_fitness = current_best_fitness
-                best_solution = current_best_solution
+                best_solution = copy.deepcopy(current_best_solution)
+            population = new_population
         best_policy = [len(self.decode(day)) for day in best_solution]
-        return best_policy, best_fitness
+        # re-evaluate the best solution in a fresh rollout for a fair comparison
+        return best_policy, self.eval_fitness(best_solution)
 
 
 class Greedy:

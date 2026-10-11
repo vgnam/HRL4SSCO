@@ -1,5 +1,7 @@
 import networkx as nx
 import numpy as np
+import random
+import torch
 import sys
 from Agent import Agent
 from Env import Env
@@ -14,11 +16,23 @@ params = {
     'num_epoch': 20,
     'num_iteration': 10,
     'num_test': 100,
+    'seed': 0,
 }
+if len(sys.argv) > 1:
+    params['seed'] = int(sys.argv[1])
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def generate_job_name(params):
-    return f"job{params['index']}-n={params['n']}-text_n={params['test_n']}-budget={params['budget']}-T={params['T']}-epoch={params['num_epoch']}-iteration={params['num_iteration']}"
+    return f"job{params['index']}-n={params['n']}-text_n={params['test_n']}-budget={params['budget']}-T={params['T']}-epoch={params['num_epoch']}-iteration={params['num_iteration']}-seed={params['seed']}"
 
 
 # run the testing rounds and write results
@@ -40,6 +54,7 @@ def run_test_rounds(model, params, job_name):
 
 
 if __name__ == "__main__":
+    set_seed(params['seed'])
     job_name = generate_job_name(params)
 
     # Training phase
@@ -50,13 +65,13 @@ if __name__ == "__main__":
         env = Env(loc=loc, budget=params['budget'], T=params['T'])
         model = Agent(env=env)
 
-        # train_cumulative_reward_list, test_cumulative_reward_list = model.train_model(
-        #     num_epochs=params['num_epoch'], num_iterations=params['num_iteration']
-        # )
+        train_cumulative_reward_list, test_cumulative_reward_list = model.train_model(
+            num_epochs=params['num_epoch'], num_iterations=params['num_iteration']
+        )
 
-        # print("------------------------------ Total Results ------------------------------")
-        # print("train_cumulative_reward_list: ", train_cumulative_reward_list)
-        # print("test_cumulative_reward_list: ", test_cumulative_reward_list)
+        print("------------------------------ Total Results ------------------------------")
+        print("train_cumulative_reward_list: ", train_cumulative_reward_list)
+        print("test_cumulative_reward_list: ", test_cumulative_reward_list)
 
     # Testing phase
     loc = np.random.rand(params['test_n'], 2) * 100
@@ -90,7 +105,7 @@ if __name__ == "__main__":
         ga = GA(env=model.env)
         for i in range(params['num_test']):
             print(f"test round: {i}")
-            seeding_policy, cumulative_reward = greedy.run()
+            seeding_policy, cumulative_reward = ga.run()
             print(f"cumulative reward of round {i}: {cumulative_reward}")
             print(f"seeding_policy: {seeding_policy}")
             cumulative_reward_test.append(cumulative_reward)

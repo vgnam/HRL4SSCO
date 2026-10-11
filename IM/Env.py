@@ -11,13 +11,13 @@ class Env:
         self.graph = graph
         self.n = len(graph.nodes())
         self.nodes = list(range(self.n))
-        self.A = nx.to_numpy_matrix(graph)   # n * n
+        self.A = np.asmatrix(nx.to_numpy_array(graph))   # n * n
         self.weighted = weighted
 
         if weighted:
             for u, v in self.graph.edges():
                 self.graph[u][v]['weight'] = self.get_edge_prob(v)
-            self.A = nx.to_numpy_matrix(graph, weight='weight')
+            self.A = np.asmatrix(nx.to_numpy_array(graph, weight='weight'))
 
         # parameters
         self.T = T

@@ -1,24 +1,38 @@
 import networkx as nx
 import numpy as np
+import random
+import torch
 import sys
 from Agent import Agent
 from Env import Env
 
 params = {
     'index': 1,
-    'n': 200,     # number of nodes
+    'n': 100,     # number of nodes (paper: 50-100; replay buffer needs a fixed size)
     'test_n': 200,
     'budget': 20,  # number of budget
-    'test_budget': 100,
+    'test_budget': 20,
     'T': 10,     # number of time steps
     'num_epoch': 20,
-    'num_iteration': 15,
+    'num_iteration': 10,
     'num_test': 100,
+    'seed': 0,
 }
+if len(sys.argv) > 1:
+    params['seed'] = int(sys.argv[1])
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def generate_job_name(params):
-    return f"job{params['index']}-n={params['n']}-test_n={params['test_n']}-budget={params['budget']}-test_budget={params['test_budget']}-T={params['T']}-epoch={params['num_epoch']}-iteration={params['num_iteration']}"
+    return f"job{params['index']}-n={params['n']}-test_n={params['test_n']}-budget={params['budget']}-test_budget={params['test_budget']}-T={params['T']}-epoch={params['num_epoch']}-iteration={params['num_iteration']}-seed={params['seed']}"
 
 
 # run the testing rounds and write results
@@ -32,7 +46,6 @@ def run_test_rounds(model, params, job_name, policy_pairs):
             for i in range(params['num_test']):
                 print(f"test round: {i}")
                 _, _, _, _, _, cumulative_reward = model.run_episode(
-                    print_info=True,
                     budget_policy=budget_policy,
                     seeding_policy=seeding_policy,
                     beam_search=('agent' in seeding_policy)
@@ -45,6 +58,7 @@ def run_test_rounds(model, params, job_name, policy_pairs):
 
 
 if __name__ == "__main__":
+    set_seed(params['seed'])
     job_name = generate_job_name(params)
 
     # Training phase
