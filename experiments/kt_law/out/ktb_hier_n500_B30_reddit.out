@@ -1,0 +1,23 @@
+KT-b high-level headroom | n=500 T=10 B=30 | 8 closed-loop episodes per cell, rollout M=48 | planned under the true law
+
+dataset  law  flat even/normal/static  best    flat*  alloc-only  gain    se   hier  gain    se   non-hub macros  time
+-------  ---  -----------------------  ------  -----  ----------  ------  ---  ----  ------  ---  --------------  ----
+reddit   WC   60.1 / 55.9 / 60.1       even    60.1   63.1        +5.0%   3.1  63.9  +6.2%   3.1  36%             446s
+reddit   CC2  58.0 / 58.0 / 56.0       even    58.0   68.0        +17.2%  0.0  86.0  +48.3%  0.0  100%            154s
+reddit   CC3  31.0 / 37.0 / 35.0       normal  37.0   37.0        +0.0%   0.0  67.0  +81.1%  0.0  100%            28s 
+reddit   MIX  57.4 / 53.1 / 55.5       even    57.4   57.4        +0.0%   3.2  62.5  +8.9%   3.0  45%             333s
+
+Pooled over datasets (gain vs best flat policy, per-episode relative)
+
+law  alloc-only       hier           
+---  ---------------  ---------------
+WC   +5.0% (se 3.1)   +6.2% (se 3.1) 
+CC2  +17.2% (se 0.0)  +48.3% (se 0.0)
+CC3  +0.0% (se 0.0)   +81.1% (se 0.0)
+MIX  +0.0% (se 3.2)   +8.9% (se 3.0) 
+
+Macros chosen by hier (operator, region, k), first episode of each cell
+  reddit/WC: wait@all:0 hub@all:16 hedge-2@all:2 hub@all:12 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0
+  reddit/CC2: gate-2@all:30 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0
+  reddit/CC3: gate-3@all:30 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0
+  reddit/MIX: gate-2@all:12 wait@all:0 hub@all:3 hub@all:12 hub@all:3 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0

@@ -1,0 +1,41 @@
+T3b planner comparison under the repo law (WC), n=100 T=10 B=20, 2 seeds x 3 episodes per dataset
+
+planner         mean value  sd     gap vs best  best count
+--------------  ----------  -----  -----------  ----------
+greedy+even        51.45    17.96  -1.6%        1/10      
+greedy+normal      49.75    16.49  -4.0%        2/10      
+greedy+static2     51.87    18.14  -0.8%        4/10      
+score+even         47.67    22.88  -14.7%       3/10      
+score+normal       47.12    16.72  -10.0%       0/10      
+prob+even          13.97    14.62  -75.3%       0/10      
+indeg+even         18.21    20.51  -69.3%       0/10      
+outdeg+even        29.97    23.78  -50.0%       0/10      
+random+even        10.45     9.65  -81.5%       0/10      
+(law WC)
+
+planner         mean value  sd     gap vs best  best count
+--------------  ----------  -----  -----------  ----------
+greedy+even        51.50    28.56  -14.2%       3/10      
+greedy+normal      55.80    24.51  -3.6%        5/10      
+greedy+static2     53.00    26.25  -10.1%       2/10      
+score+even         24.20    25.72  -61.8%       0/10      
+score+normal       50.10    22.03  -13.4%       2/10      
+prob+even           2.80     1.87  -93.6%       0/10      
+indeg+even         14.90    20.92  -81.1%       0/10      
+outdeg+even        26.00    26.03  -64.3%       0/10      
+random+even         2.60     1.90  -94.0%       0/10      
+(law CC2)
+
+planner         mean value  sd     gap vs best  best count
+--------------  ----------  -----  -----------  ----------
+greedy+even        36.87    12.96  -2.3%        0/10      
+greedy+normal      35.24    10.40  -5.1%        3/10      
+greedy+static2     36.93    12.81  -2.0%        3/10      
+score+even         29.74    19.31  -28.8%       2/10      
+score+normal       32.48     7.57  -10.6%       2/10      
+prob+even          18.79    17.65  -58.7%       0/10      
+indeg+even         16.70    18.67  -64.1%       0/10      
+outdeg+even        26.37    20.05  -39.1%       0/10      
+random+even        11.79    11.69  -71.8%       0/10      
+(law DECAY)
+

@@ -1,0 +1,31 @@
+dataset                dblp        hepph          wiki       
+law                     CC2     WC   CC2     WC    CC2     WC
+method                                                       
+ws:agent-agent         58.0   94.2  72.0  102.0  141.0   91.6
+ws:agent-agent+beam    58.0   96.0  72.0  100.8  142.0   90.8
+ws:agent-degree        63.0   78.0  69.0   73.2  137.0   88.2
+ws:agent-score         58.0   94.2  73.0   96.5  139.0   91.2
+ws:average-agent       42.0  101.9  60.0  100.8  139.0   90.8
+ws:average-agent+beam  38.0  103.0  59.0  100.5  137.0   92.0
+ws:average-degree      53.0   89.4  52.0   75.3  134.0   90.8
+ws:average-score       42.0  100.4  51.0   97.1  137.0   92.1
+ws:normal-agent        58.0   94.2  72.0   82.0  141.0   84.7
+ws:normal-agent+beam   58.0   96.0  72.0   84.2  142.0   87.3
+ws:normal-degree       63.0   78.0  69.0   63.1  137.0   85.8
+ws:normal-score        58.0   94.2  73.0   78.9  139.0   83.8
+ws:static-agent        58.0  103.5  73.0   92.2  143.0   91.5
+ws:static-agent+beam   54.0  103.7  68.0   96.4  148.0   91.2
+ws:static-degree       63.0   92.1  70.0   69.5  142.0   87.0
+ws:static-score        55.0  101.7  69.0   89.8  144.0   90.7
+[strata]               99.0  109.8  83.0   95.1  161.0  108.3
+[oracle]               88.0  105.1  83.0  103.2  153.0  107.8
+[flat-hub*]            83.0  105.1  82.0  103.2  152.0  107.8
+[ws-option]            58.0   94.2  72.0  102.0  141.0   91.6
+
+dataset law  strata         ws best mode  ws best  ws paper(agent+beam)  strata - best     p
+   dblp CC2    99.0      ws:agent-degree     63.0                  58.0           36.0   NaN
+   dblp  WC   109.8 ws:static-agent+beam    103.7                  96.0            6.1 0.012
+  hepph CC2    83.0       ws:agent-score     73.0                  72.0           10.0   NaN
+  hepph  WC    95.1       ws:agent-agent    102.0                 100.8           -6.9 0.070
+   wiki CC2   161.0 ws:static-agent+beam    148.0                 142.0           13.0   NaN
+   wiki  WC   108.3     ws:average-score     92.1                  90.8           16.2 0.000

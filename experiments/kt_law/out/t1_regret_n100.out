@@ -1,0 +1,44 @@
+T1 law-vs-decision regret | n=100 T=10 B=20 planner=greedy+even M_eval=2000 laws=['WC', 'UNI', 'LT', 'CC2', 'REINF', 'DECAY', '2HOP']
+
+MEAN regret over instances (row = law that is true, column = law used to plan)
+true \ plan  WC       UNI      LT       CC2      REINF    DECAY    2HOP     oracle value
+-----------  -------  -------  -------  -------  -------  -------  -------  ------------
+WC             +0.0%   +11.0%    +0.0%   +27.3%    +3.6%   +10.2%   +10.9%  52.7        
+UNI            +2.6%    +0.0%    +2.6%    +9.1%    +5.0%    +0.5%    +2.3%  26.6        
+LT             +0.5%   +11.2%    +0.0%   +26.3%    +3.9%   +10.5%   +10.8%  53.3        
+CC2           +34.2%   +23.0%   +23.9%    +0.0%   +28.5%   +21.6%   +16.5%  47.2        
+REINF          +3.1%   +14.0%    +3.2%   +25.0%    +0.0%   +11.7%   +10.5%  74.2        
+DECAY          +1.6%    -0.0%    +1.4%   +10.8%    +3.8%    +0.0%    +0.4%  31.5        
+2HOP           +6.1%    +4.4%    +5.6%   +11.5%    +5.4%    +4.0%    +0.0%  44.2        
+
+MAX regret over instances
+true \ plan  WC       UNI      LT       CC2      REINF    DECAY    2HOP     oracle value
+-----------  -------  -------  -------  -------  -------  -------  -------  ------------
+WC             +0.0%   +23.1%    +1.9%   +63.4%   +14.0%   +25.0%   +23.6%  52.7        
+UNI            +7.3%    +0.0%    +7.6%   +16.8%   +14.5%    +1.5%    +5.8%  26.6        
+LT             +2.8%   +24.6%    +0.0%   +62.0%   +15.0%   +23.8%   +21.8%  53.3        
+CC2           +65.5%   +48.9%   +48.9%    +0.0%   +55.2%   +51.1%   +41.4%  47.2        
+REINF         +12.4%   +36.7%   +10.1%   +67.6%    +0.0%   +24.6%   +24.0%  74.2        
+DECAY          +8.3%    +2.6%    +8.0%   +24.9%   +11.0%    +0.0%    +3.5%  31.5        
+2HOP          +14.1%   +10.5%   +14.4%   +36.2%   +12.9%    +8.4%    +0.0%  44.2        
+
+using the default law WC to plan, when the truth is:
+true law  mean regret  max regret  value (plan WC)  value (plan true)
+--------  -----------  ----------  ---------------  -----------------
+WC        +0.0%        +0.0%       52.70            52.70            
+UNI       +2.6%        +7.3%       25.89            26.63            
+LT        +0.5%        +2.8%       53.16            53.28            
+CC2       +34.2%       +65.5%      29.20            47.20            
+REINF     +3.1%        +12.4%      72.03            74.16            
+DECAY     +1.6%        +8.3%       30.99            31.50            
+2HOP      +6.1%        +14.1%      41.33            44.17            
+
+worst pairs (mean regret):
+   true CC2    plan WC      +34.2%
+   true CC2    plan REINF   +28.5%
+   true WC     plan CC2     +27.3%
+   true LT     plan CC2     +26.3%
+   true REINF  plan CC2     +25.0%
+   true CC2    plan LT      +23.9%
+   true CC2    plan UNI     +23.0%
+   true CC2    plan DECAY   +21.6%

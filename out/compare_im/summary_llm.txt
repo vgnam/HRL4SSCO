@@ -1,0 +1,8 @@
+dataset law  oracle  strata+llm  strata(no llm)  llm-nollm  p(llm vs nollm)  ws best              ws mode  llm-wsbest  p(llm vs ws)
+   dblp CC2    88.0        95.0            99.0       -4.0              NaN     63.0      ws:agent-degree        32.0           NaN
+   dblp  WC   105.1       106.7           109.8       -3.1            0.281    103.7 ws:static-agent+beam         3.0         0.258
+  hepph CC2    83.0        83.0            83.0        0.0              NaN     73.0       ws:agent-score        10.0           NaN
+  hepph  WC   103.2        95.3            95.1        0.2            0.939    102.0       ws:agent-agent        -6.7         0.078
+   wiki CC2   153.0       161.0           161.0        0.0              NaN    148.0 ws:static-agent+beam        13.0           NaN
+   wiki  WC   107.8       108.3           108.3        0.0              NaN     92.1     ws:average-score        16.2         0.000
+oracle identical across runs: True

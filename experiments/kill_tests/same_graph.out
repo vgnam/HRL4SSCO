@@ -1,0 +1,10 @@
+dblp average-greedyMC: 105.40 +- 1.07
+dblp quarter-greedyMC: 107.36 +- 0.91
+hepph average-greedyMC: 88.11 +- 0.60
+hepph quarter-greedyMC: 89.36 +- 0.63
+higgs_100 average-greedyMC: 28.49 +- 0.21
+higgs_100 quarter-greedyMC: 28.96 +- 0.22
+reddit average-greedyMC: 22.56 +- 0.19
+reddit quarter-greedyMC: 22.99 +- 0.20
+wiki average-greedyMC: 92.65 +- 0.78
+wiki quarter-greedyMC: 94.76 +- 0.72

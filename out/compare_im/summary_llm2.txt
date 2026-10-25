@@ -1,0 +1,15 @@
+dataset law  oracle  new prompt  old prompt  no llm  new-old  p(new,old)  new-nollm  p(new,nollm)  ws best  new-ws  p(new,ws)
+   dblp CC2    88.0        94.0        95.0    99.0     -1.0         NaN       -5.0           NaN     63.0    31.0        NaN
+   dblp  WC   105.1       100.5       106.7   109.8     -6.2       0.099       -9.3         0.116    103.7    -3.2      0.533
+  hepph CC2    83.0        88.0        83.0    83.0      5.0         NaN        5.0           NaN     73.0    15.0        NaN
+  hepph  WC   103.2        95.3        95.3    95.1      0.0       1.000        0.2         0.956    102.0    -6.7      0.008
+   wiki CC2   153.0       161.0       161.0   161.0      0.0         NaN        0.0           NaN    148.0    13.0        NaN
+   wiki  WC   107.8       106.0       108.3   108.3     -2.3       0.282       -2.3         0.282     92.1    13.9      0.000
+oracle identical: True
+
+im-dblp-n200-s0-WC | hyps: ['llm:Law', 'llm:Law'] | ops accepted: [] | op gains: [('llm-cascade-2', 0.0), ('llm-fatigue-hub', -6.5), ('llm-finisher', -19.0), ('llm-grand-hub', 0.5), ('llm-fresh-hub', -1.0), ('llm-closer-hub', -20.0)] | op errors: 0 | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 7984, 'tokens_out': 31072} | build 1305s
+im-dblp-n200-s0-CC2 | hyps: ['llm:Law', 'llm:Law', 'llm:Law', 'gate', 'llm:Law'] | ops accepted: ['llm-expo-bank', 'llm-marginal-self', 'llm-gate-self'] | op gains: [('llm-brink-2step', -8.0), ('llm-expo-bank', 1.0), ('llm-marginal-self', 4.0), ('llm-gate-self', 1.0), ('llm-brink-pull', -16.0), ('llm-expo-brink', -11.0)] | op errors: 0 | usage: {'calls': 4, 'cache_hits': 0, 'tokens_in': 6661, 'tokens_out': 14808} | build 438s
+im-hepph-n200-s0-WC | hyps: ['llm:Law'] | ops accepted: ['llm-cascade-2', 'llm-cascade-3'] | op gains: [('llm-cascade-2', 4.0), ('llm-wear-net', -4.0), ('llm-cascade-3', 3.5), ('llm-cascade-lookahead', -4.5), ('llm-fresh-target', -3.5), ('llm-gate-spreader', -1.5)] | op errors: 0 | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 7891, 'tokens_out': 36433} | build 1470s
+im-hepph-n200-s0-CC2 | hyps: ['llm:Law', 'llm:Law', 'gate', 'llm:Law', 'llm:Law'] | ops accepted: ['llm-gate-hub-mix'] | op gains: [('llm-chain-2', -31.0), ('llm-fresh-hub', -31.0), ('llm-gate-plus', -26.0), ('llm-gate-viable', 0.0), ('llm-gate-hub-mix', 2.0), ('llm-gate-chain-2', -2.0)] | op errors: 0 | usage: {'calls': 4, 'cache_hits': 0, 'tokens_in': 6065, 'tokens_out': 12151} | build 351s
+im-wiki-n200-s0-WC | hyps: ['lt'] | ops accepted: ['llm-tiered-gate'] | op gains: [('llm-cascade-2', 0.0), ('llm-tip-front', -7.0), ('llm-cascade-3', -1.0), ('llm-gate-cross', -3.5), ('llm-tiered-gate', 3.5)] | op errors: 1 | usage: {'calls': 4, 'cache_hits': 0, 'tokens_in': 4931, 'tokens_out': 17537} | build 1118s
+im-wiki-n200-s0-CC2 | hyps: ['llm:Law', 'llm:Law', 'llm:Law', 'llm:Law', 'gate'] | ops accepted: ['llm-chain-gate'] | op gains: [('llm-cascade-2', 0.0), ('llm-domino-2', 0.0), ('llm-expose-2', 0.0), ('llm-cascade-2', 0.0), ('llm-memory-push', 0.0), ('llm-chain-gate', 1.0)] | op errors: 0 | usage: {'calls': 4, 'cache_hits': 0, 'tokens_in': 6550, 'tokens_out': 17655} | build 242s

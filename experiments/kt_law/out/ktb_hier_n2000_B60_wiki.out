@@ -1,0 +1,2 @@
+KT-b high-level headroom | n=2000 T=10 B=60 | 6 closed-loop episodes per cell, rollout M=32 | planned under the true law
+

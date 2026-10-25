@@ -1,0 +1,17 @@
+KT-b high-level headroom | n=500 T=10 B=30 | 2 closed-loop episodes per cell, rollout M=16 | planned under the true law
+
+dataset  law  flat even/normal/static  best  flat*  alloc-only  gain    se    hier   gain    se    non-hub macros  time
+-------  ---  -----------------------  ----  -----  ----------  ------  ----  -----  ------  ----  --------------  ----
+dblp     WC   195.0 / 171.0 / 195.0    even  195.0  219.0       +12.3%  13.8  222.0  +13.8%  10.3  71%             38s 
+dblp     CC2  169.0 / 152.0 / 142.0    even  169.0  181.0       +7.1%   0.0   181.0  +7.1%   0.0   25%             34s 
+
+Pooled over datasets (gain vs best flat policy, per-episode relative)
+
+law  alloc-only        hier            
+---  ----------------  ----------------
+WC   +12.3% (se 13.8)  +13.8% (se 10.3)
+CC2  +7.1% (se 0.0)    +7.1% (se 0.0)  
+
+Macros chosen by hier (operator, region, k), first episode of each cell
+  dblp/WC: hub@c2:3 gate-3@all:6 gate-2@all:6 gate-3@all:3 hedge-2@all:4 hedge-2@c0:2 hub@all:6 wait@all:0 wait@all:0 wait@all:0
+  dblp/CC2: hub@all:3 hub@all:3 hedge-2@all:6 hub@all:18 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0

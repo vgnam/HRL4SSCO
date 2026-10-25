@@ -1,0 +1,11 @@
+T2 fit-from-logs | hidden truth CC2 | n=100 T=10 B=20 | 200 behaviour episodes, 70/30 train/test split
+
+dataset  regret WC  regret libA  regret libB  value true/A/B  testLL A  testLL B  law A (IC only)  law B (+gates)
+-------  ---------  -----------  -----------  --------------  --------  --------  ---------------  --------------
+wiki     +3.4%      +5.7%        +0.0%        87.0/82.0/87.0  -2424     -0        wc(w=0.295121)   gate(g=2)     
+dblp     +22.4%     +44.8%       +0.0%        58.0/32.0/58.0  -2008     -0        wc(w=0.0794328)  gate(g=2)     
+reddit   +51.2%     +32.6%       +0.0%        43.0/29.0/43.0  -505      -0        wc(w=0.190546)   gate(g=2)     
+
+libA = IC family only (wc/uni/lt/reinf/decay);  libB = libA + gate laws
+regret of the WC default shows what assuming the repo law costs;
+libB shows whether a library that can express the structure recovers the decision.

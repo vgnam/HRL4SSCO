@@ -1,0 +1,38 @@
+K1 gate-event rarity | hidden truth CC2 | n=100 T=10 B=20 | 200 behaviour episodes, same logs as t2_fit (train = last 70%)
+
+## 1. Gate-event rarity in the training logs
+r_node = share of eligible node-rounds with a>=g; r_round / r_ep = share of rounds / episodes with at least one; n_hit = such node-rounds; n_a1 = eligible node-rounds with a=1 (the events that refute IC under a gate); miss = (1-r)^N
+
+inst    g  policy  N_ep  N_rnd  r_node  r_round  r_ep   n_hit  n_a1  miss_rnd   miss_ep 
+------  -  ------  ----  -----  ------  -------  -----  -----  ----  ---------  --------
+wiki-0  2  all     140   1400   0.0419  0.261    0.714  4218   9275  2.17e-184  6.77e-77
+wiki-0  2  random  35    350    0.0087  0.243    0.857  263    3185  5.16e-43   2.64e-30
+wiki-0  2  score   35    350    0.1276  0.500    1.000  2135   2380  4.36e-106  0.00e+00
+wiki-0  2  indeg   35    350    0.0000  0.000    0.000  0      2450  1.00e+00   1.00e+00
+wiki-0  2  outdeg  35    350    0.0942  0.300    1.000  1820   1260  6.09e-55   0.00e+00
+wiki-0  3  all     140   1400   0.0123  0.136    0.550  1239   9275  2.09e-89   2.82e-49
+wiki-0  3  random  35    350    0.0016  0.043    0.200  49     3185  2.20e-07   4.06e-04
+wiki-0  3  score   35    350    0.0356  0.300    1.000  595    2380  6.09e-55   0.00e+00
+wiki-0  3  indeg   35    350    0.0000  0.000    0.000  0      2450  1.00e+00   1.00e+00
+wiki-0  3  outdeg  35    350    0.0308  0.200    1.000  595    1260  1.21e-34   0.00e+00
+
+## 2. Is the threshold identified? train log-likelihood of gate(g)
+t2_fit keeps the first of tied candidates, so ties make g=2 win by grid order
+
+inst    g=1      g=2  g=3     g=4     g=5      argmax (ties)
+------  -------  ---  ------  ------  -------  -------------
+wiki-0  -256278  -0   -82313  -99637  -107844  2            
+
+## 3. Policy-guided rarity: logs vs states visited by the plans (replayed under the truth)
+
+inst    g  r_node log  r_node oracle  r_node planA  r_rnd log  r_rnd oracle  r_rnd planA
+------  -  ----------  -------------  ------------  ---------  ------------  -----------
+wiki-0  2  0.0419      0.1882         0.1897        0.261      0.600         0.300      
+wiki-0  3  0.0123      0.0421         0.0575        0.136      0.200         0.300      
+
+## 4. Rarity vs libA regret (g=2)
+shift = r_node under the oracle plan / r_node in the logs
+
+inst    regret libA  law A           value true/A  alloc true  alloc A  r_node log  r_node oracle  shift  miss_rnd
+------  -----------  --------------  ------------  ----------  -------  ----------  -------------  -----  --------
+wiki-0  +5.7%        wc(w=0.295121)  87.0/82.0     even        static   0.0419      0.1882         4.5x   2.2e-184

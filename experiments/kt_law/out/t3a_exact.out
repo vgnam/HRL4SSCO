@@ -1,0 +1,74 @@
+T3a planner calibration against exhaustive references
+
+planner           value  gap vs exact  alloc (ep0)  sd   
+----------------  -----  ------------  -----------  -----
+greedy+lookahead  9.933  -0.2%         4            0.056
+greedy+even       9.933  -0.2%         4            0.056
+greedy+normal     9.933  -0.2%         4            0.056
+prob+even         7.528  -24.4%        4            0.000
+score+even        9.372  -5.8%         4            0.000
+indeg+even        5.331  -46.4%        4            0.000
+outdeg+even       8.876  -10.8%        4            0.000
+random+even       6.529  -34.4%        4            0.000
+case a: single round, selection law WC n=20 T=1 B=4 exact=9.953 (6196 policies)
+
+planner           value  gap vs exact  alloc (ep0)  sd   
+----------------  -----  ------------  -----------  -----
+greedy+lookahead  6.580  -9.2%         3+0          0.000
+greedy+even       6.714  -7.4%         2+1          0.185
+greedy+normal     6.580  -9.2%         3+0          0.000
+prob+even         4.216  -41.8%        2+1          1.043
+score+even        6.714  -7.4%         2+1          0.185
+indeg+even        5.997  -17.3%        2+1          0.000
+outdeg+even       6.059  -16.4%        2+1          0.000
+random+even       5.451  -24.8%        2+1          0.000
+case b: two rounds law WC n=8 T=2 B=3 exact=7.250 (697 policies)
+
+planner           value  gap vs exact  alloc (ep0)  sd   
+----------------  -----  ------------  -----------  -----
+greedy+lookahead  5.235  -8.2%         1+0+1        0.543
+greedy+even       5.707  +0.0%         1+1+0        0.000
+greedy+normal     5.703  -0.0%         2+0+0        0.000
+prob+even         2.703  -52.6%        1+1+0        0.000
+score+even        5.707  +0.0%         1+1+0        0.000
+indeg+even        2.703  -52.6%        1+1+0        0.000
+outdeg+even       2.703  -52.6%        1+1+0        0.000
+random+even       2.357  -58.7%        1+1+0        0.000
+case c: three rounds (WC) law WC n=6 T=3 B=2 exact=5.705 (172 policies)
+
+planner           value  gap vs exact  alloc (ep0)  sd   
+----------------  -----  ------------  -----------  -----
+greedy+lookahead  5.394  -9.2%         1+0+1        0.456
+greedy+even       5.869  -1.2%         1+1+0        0.000
+greedy+normal     5.942  +0.0%         2+0+0        0.000
+prob+even         2.971  -50.0%        1+1+0        0.031
+score+even        5.869  -1.2%         1+1+0        0.000
+indeg+even        2.942  -50.5%        1+1+0        0.000
+outdeg+even       2.942  -50.5%        1+1+0        0.000
+random+even       2.920  -50.9%        1+1+0        0.000
+case c: three rounds (REINF) law REINF n=6 T=3 B=2 exact=5.941 (172 policies)
+
+planner           value  gap vs exact  alloc (ep0)  sd   
+----------------  -----  ------------  -----------  -----
+greedy+lookahead  2.328  -1.4%         2+0+0        0.046
+greedy+even       2.328  -1.4%         1+1+0        0.004
+greedy+normal     2.331  -1.3%         2+0+0        0.047
+prob+even         1.991  -15.7%        1+1+0        0.272
+score+even        1.569  -33.5%        1+1+0        0.466
+indeg+even        1.317  -44.2%        1+1+0        0.000
+outdeg+even       1.317  -44.2%        1+1+0        0.000
+random+even       1.165  -50.7%        1+1+0        0.000
+case c: three rounds (DECAY) law DECAY n=6 T=3 B=2 exact=2.361 (172 policies)
+
+planner           value  gap vs exact  alloc (ep0)  sd   
+----------------  -----  ------------  -----------  -----
+greedy+lookahead  3.000  +0.0%         2+0+0        0.000
+greedy+even       2.000  -33.3%        1+1+0        0.000
+greedy+normal     3.000  +0.0%         2+0+0        0.000
+prob+even         1.000  -66.7%        1+1+0        0.000
+score+even        1.000  -66.7%        1+1+0        0.000
+indeg+even        1.000  -66.7%        1+1+0        0.000
+outdeg+even       1.000  -66.7%        1+1+0        0.000
+random+even       1.000  -66.7%        1+1+0        0.000
+case c: three rounds (CC2) law CC2 n=6 T=3 B=2 exact=3.000 (172 policies)
+

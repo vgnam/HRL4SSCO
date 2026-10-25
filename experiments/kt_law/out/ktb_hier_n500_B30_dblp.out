@@ -1,0 +1,23 @@
+KT-b high-level headroom | n=500 T=10 B=30 | 8 closed-loop episodes per cell, rollout M=48 | planned under the true law
+
+dataset  law  flat even/normal/static  best    flat*  alloc-only  gain   se   hier   gain    se   non-hub macros  time
+-------  ---  -----------------------  ------  -----  ----------  -----  ---  -----  ------  ---  --------------  ----
+dblp     WC   194.5 / 175.8 / 197.2    static  197.2  207.5       +5.2%  1.5  207.6  +5.3%   3.4  63%             515s
+dblp     CC2  169.0 / 152.0 / 142.0    even    169.0  181.0       +7.1%  0.0  181.0  +7.1%   0.0  25%             281s
+dblp     CC3  30.0 / 60.0 / 32.0       normal  60.0   60.0        +0.0%  0.0  92.0   +53.3%  0.0  100%            29s 
+dblp     MIX  174.9 / 162.6 / 167.6    even    174.9  187.9       +7.4%  2.4  187.1  +7.0%   2.4  41%             282s
+
+Pooled over datasets (gain vs best flat policy, per-episode relative)
+
+law  alloc-only      hier           
+---  --------------  ---------------
+WC   +5.2% (se 1.5)  +5.3% (se 3.4) 
+CC2  +7.1% (se 0.0)  +7.1% (se 0.0) 
+CC3  +0.0% (se 0.0)  +53.3% (se 0.0)
+MIX  +7.4% (se 2.4)  +7.0% (se 2.4) 
+
+Macros chosen by hier (operator, region, k), first episode of each cell
+  dblp/WC: gate-3@all:6 gate-2@c0:3 hub@all:6 hub@all:6 wait@all:0 hub@all:8 hub@c2:1 wait@all:0 wait@all:0 wait@all:0
+  dblp/CC2: hub@all:3 hub@all:3 hedge-2@all:6 hub@all:18 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0
+  dblp/CC3: hedge-2@all:30 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0
+  dblp/MIX: hub@all:12 hedge-2@all:8 hub@all:8 gate-2@all:1 hub@c2:1 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0

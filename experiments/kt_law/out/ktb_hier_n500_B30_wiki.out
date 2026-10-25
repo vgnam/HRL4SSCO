@@ -1,0 +1,23 @@
+KT-b high-level headroom | n=500 T=10 B=30 | 8 closed-loop episodes per cell, rollout M=48 | planned under the true law
+
+dataset  law  flat even/normal/static  best    flat*  alloc-only  gain   se   hier   gain   se   non-hub macros  time 
+-------  ---  -----------------------  ------  -----  ----------  -----  ---  -----  -----  ---  --------------  -----
+wiki     WC   248.1 / 176.9 / 238.4    even    248.1  239.6       -3.4%  1.4  243.9  -1.7%  1.3  57%             873s 
+wiki     CC2  402.0 / 394.0 / 399.0    even    402.0  404.0       +0.5%  0.0  405.0  +0.7%  0.0  25%             480s 
+wiki     CC3  377.0 / 388.0 / 389.0    static  389.0  395.0       +1.5%  0.0  396.0  +1.8%  0.0  25%             1751s
+wiki     MIX  297.4 / 269.9 / 289.8    even    297.4  290.8       -2.2%  0.7  292.2  -1.7%  0.7  41%             269s 
+
+Pooled over datasets (gain vs best flat policy, per-episode relative)
+
+law  alloc-only      hier          
+---  --------------  --------------
+WC   -3.4% (se 1.4)  -1.7% (se 1.3)
+CC2  +0.5% (se 0.0)  +0.7% (se 0.0)
+CC3  +1.5% (se 0.0)  +1.8% (se 0.0)
+MIX  -2.2% (se 0.7)  -1.7% (se 0.7)
+
+Macros chosen by hier (operator, region, k), first episode of each cell
+  wiki/WC: gate-2@c0:3 gate-2@all:6 gate-2@all:6 wait@all:0 hub@all:3 gate-3@all:6 gate-3@all:2 hub@c1:2 hub@all:1 hub@c2:1
+  wiki/CC2: gate-2@c0:3 hub@all:3 hub@all:6 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 wait@all:0 hub@all:18
+  wiki/CC3: wait@all:0 wait@all:0 hub@all:8 hub@all:4 gate-3@all:12 wait@all:0 wait@all:0 wait@all:0 hub@all:6 wait@all:0
+  wiki/MIX: hub@all:3 gate-3@all:3 gate-3@all:3 hub@all:6 gate-3@all:3 hedge-2@all:6 hub@all:4 hub@c1:1 hub@all:1 wait@all:0
