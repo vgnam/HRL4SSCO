@@ -1,0 +1,504 @@
+{
+ "im-wiki-n200-s0-SOFT2": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 3,
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 3,
+    "accepted": 9,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": -3372.683728577379,
+      "pool": 6
+     },
+     {
+      "round": 1,
+      "best_ll_val": -3177.6988532945147,
+      "pool": 9
+     },
+     {
+      "round": 2,
+      "best_ll_val": -3177.6988532945147,
+      "pool": 12
+     }
+    ],
+    "usage": {
+     "calls": 3,
+     "cache_hits": 0,
+     "tokens_in": 5714,
+     "tokens_out": 9454
+    }
+   },
+   "n_llm": 9,
+   "n_dsl": 11
+  },
+  "hypotheses": [
+   [
+    "llm:Law",
+    -3177.6988532945147,
+    0
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 1
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-lookahead-1",
+     "values": [
+      154.5
+     ],
+     "gain": [
+      0.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"lookahead-1\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # hub's immediate reward, plus a credit for receivers that this seed\n    # is likely to flip active: next round they spread for free.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)           # marginal activation now\n    spread = D @ graph.adjT + f.eligible * (1.0 - P0)\n    # value of node u as a spreader next round, given current exposures:\n    # if u activates, each of its out-neighbours gets its own marginal P1-P0.\n    V = np.where(f.eligible, P1 - P0, 0.0) @ graph.adjT\n    flip = D                                          # prob. this seed flips u now\n    return spread + flip * V"
+    },
+    {
+     "name": "llm-threshold-sniper",
+     "values": [
+      154.0
+     ],
+     "gain": [
+      -0.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"threshold-sniper\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Prefer seeds whose out-neighbours sit near their (community-shifted)\n    # threshold, where prob is steepest: one exposure there buys the most\n    # probability mass and, next round, a cascade. gate-2 hard-codes a==1;\n    # this reads the steepness off prob so it adapts to any th_c offsets.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    base = D @ graph.adjT + f.eligible * (1.0 - P0)\n    sens = 4.0 * P0 * (1.0 - P0)                      # peak where a ~= 1 + th\n    steep = sens @ graph.adjT                         # how fragile u's neighbourhood is\n    return base + f.eligible * steep"
+    },
+    {
+     "name": "llm-two-hop-bank",
+     "values": [
+      152.5
+     ],
+     "gain": [
+      -2.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"two-hop-bank\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # hub stops at one hop; reward also accrues when receivers activate and\n    # cascade on the following round. Bank a discounted two-hop term:\n    # D @ (adjT + decay * adjT @ adjT) approximates the total activation\n    # mass a seed eventually buys under the current law.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    decay = 0.4\n    reach = graph.adjT + decay * (graph.adjT @ graph.adjT)\n    gain = D @ reach + f.eligible * (1.0 - P0)\n    # small non-zero reach keeps tie-breaking away from pure id order\n    return gain + 1e-3 * f.eligible * (D @ graph.adjT)"
+    },
+    {
+     "name": "llm-wave2-hub",
+     "values": [
+      153.0
+     ],
+     "gain": [
+      -1.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"wave2-hub\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Hub's one-round gain, plus the second wave: nodes that this seed set\n    # activates now become active in-neighbours next round, so their own\n    # out-spread is extra reward that hub ignores.\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    s = D @ graph.adjT                       # exposure delivered this round\n    nxt = prob(f.a + s) - prob(f.a)          # extra activation prob next round\n    gain = s + f.eligible * (1.0 - P0) + nxt @ graph.adjT\n    return gain + 1e-3 * f.eligible"
+    }
+   ],
+   "accepted": [],
+   "errors": [
+    "ValueError: matmul: dimension mismatch with signature (n,k=200),(k=2,m)->(n,m)",
+    "ValueError: matmul: dimension mismatch with signature (n,k=200),(k=2,m)->(n,m)"
+   ]
+  },
+  "library": [
+   "hub",
+   "prime",
+   "wait",
+   "gate-2",
+   "gate-3",
+   "hedge-2",
+   "hedge-3"
+  ],
+  "llm_usage": {
+   "calls": 5,
+   "cache_hits": 0,
+   "tokens_in": 8379,
+   "tokens_out": 16630
+  },
+  "build_seconds": 2756.388488292694
+ },
+ "im-wiki-n200-s0-HET": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 3,
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 3,
+    "accepted": 9,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": -9043.160871803382,
+      "pool": 6
+     },
+     {
+      "round": 1,
+      "best_ll_val": -9043.160871803382,
+      "pool": 9
+     },
+     {
+      "round": 2,
+      "best_ll_val": -9021.085899386862,
+      "pool": 12
+     }
+    ],
+    "usage": {
+     "calls": 3,
+     "cache_hits": 0,
+     "tokens_in": 5980,
+     "tokens_out": 7213
+    }
+   },
+   "n_llm": 9,
+   "n_dsl": 11
+  },
+  "hypotheses": [
+   [
+    "llm:Law",
+    -9021.085899386862,
+    0
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 1
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-cascade-2",
+     "values": [
+      120.5
+     ],
+     "gain": [
+      0.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"cascade-2\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    own = f.eligible * (1.0 - P0)\n    # capacity of a currently-dark node: chance it fires next round off one push\n    dark = (f.a == 0) & f.eligible\n    a1 = f.a + dark.astype(float)\n    fire0 = np.where(dark, prob(a1), 0.0)          # (M, n)\n    valN = fire0.mean(axis=0)                      # (n,) next-round trigger value\n    imm = D @ graph.adjT + own                     # hub's one-round gain\n    second = (D * valN[None, :]) @ graph.adjT      # expected displaced capacity\n    reach = f.eligible * (1e-4 * (1.0 + np.log1p(f.indeg)))\n    return imm + 0.6 * second + reach"
+    },
+    {
+     "name": "llm-fatigue-net",
+     "values": [
+      118.0
+     ],
+     "gain": [
+      -2.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"fatigue-net\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    own = f.eligible * (1.0 - P0)\n    imm = D @ graph.adjT + own\n    # exposure dumped on targets that stay inactive erodes their future yield\n    waste = ((1.0 - P1) * D) @ graph.adjT\n    reach = f.eligible * (1e-4 * (1.0 + np.log1p(f.indeg)))\n    return imm - 0.5 * waste + reach"
+    },
+    {
+     "name": "llm-diversify",
+     "values": [
+      122.5
+     ],
+     "gain": [
+      2.0
+     ],
+     "accepted": true,
+     "source": "NAME = \"diversify\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    own = f.eligible * (1.0 - P0)\n    imm = D @ graph.adjT + own\n    n = f.community.shape[0]\n    C = int(f.community.max()) + 1\n    B = np.zeros((n, C))\n    B[np.arange(n), f.community.astype(int)] = 1.0\n    prior = np.maximum(f.E - f.a, 0.0)\n    fresh = D * np.exp(-prior)                     # value of pushes into untouched targets\n    Wc = B.T @ fresh.mean(axis=0)                  # (C,) fresh potential per community\n    Wc = Wc / (Wc.max() + 1e-12)\n    cov = (graph.adj @ B) > 0.5                    # (n, C) communities each node reaches\n    div = cov @ Wc\n    reach = f.eligible * (1e-4 * (1.0 + np.log1p(f.indeg)))\n    return imm + 0.3 * div + reach"
+    },
+    {
+     "name": "llm-relay-2",
+     "values": [
+      122.5
+     ],
+     "gain": [
+      0.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"relay-2\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # hub gain plus a discounted second hop: a node that flips this round\n    # becomes an active in-neighbour next round and can trigger further\n    # activations, which plain one-round hub ignores.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    one = D @ graph.adjT + f.eligible * (1.0 - P0)\n    relay = D * P1                        # expected new spreaders produced this hop\n    two = relay @ graph.adjT @ graph.adjT  # their expected second-round reach\n    return one + 0.25 * two + 1e-3 * f.eligible"
+    },
+    {
+     "name": "llm-harvest-fat",
+     "values": [
+      120.5
+     ],
+     "gain": [
+      -2.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"harvest-fat\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # H0's fatigue penalises nodes that already carry prior exposure but are\n    # not active: their activation odds decay every round they wait. Hub\n    # prices them at their (already discounted) prob, so it under-seeds them.\n    # Add an urgency bonus for finishing previously exposed candidates now,\n    # while their remaining fatigue-discounted mass is still harvestable.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    prior = np.maximum(f.E - f.a, 0.0)\n    urgent = (prior > 0) & f.eligible\n    return (D @ graph.adjT\n            + f.eligible * (1.0 - P0)\n            + 0.8 * urgent * (1.0 - P0)\n            + 1e-3 * f.eligible)"
+    }
+   ],
+   "accepted": [
+    "llm-diversify"
+   ],
+   "errors": [
+    "ValueError: inconsistent shapes"
+   ]
+  },
+  "library": [
+   "hub",
+   "prime",
+   "wait",
+   "gate-2",
+   "gate-3",
+   "hedge-2",
+   "hedge-3",
+   "llm-diversify"
+  ],
+  "llm_usage": {
+   "calls": 5,
+   "cache_hits": 0,
+   "tokens_in": 8862,
+   "tokens_out": 18924
+  },
+  "build_seconds": 2552.0406305789948
+ },
+ "im-wiki-n200-s0-FATIGUE": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 3,
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 3,
+    "accepted": 9,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": -3647.1548915369544,
+      "pool": 6
+     },
+     {
+      "round": 1,
+      "best_ll_val": -3251.045119955065,
+      "pool": 9
+     },
+     {
+      "round": 2,
+      "best_ll_val": -3208.457414959813,
+      "pool": 12
+     }
+    ],
+    "usage": {
+     "calls": 3,
+     "cache_hits": 0,
+     "tokens_in": 5446,
+     "tokens_out": 5672
+    }
+   },
+   "n_llm": 9,
+   "n_dsl": 11
+  },
+  "hypotheses": [
+   [
+    "llm:Law",
+    -3208.457414959813,
+    0
+   ],
+   [
+    "llm:Law",
+    -3212.5574932811387,
+    1
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 2
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-cascade",
+     "values": [
+      53.5,
+      58.0
+     ],
+     "gain": [
+      1.0,
+      5.0
+     ],
+     "accepted": true,
+     "source": "NAME = \"cascade\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Full cascade pricing: a seed's marginal activation of a target v is worth\n    # more than this round's reward, because a newly active v enters next\n    # round's frontier and can flip *fresh* out-neighbours (a=1, no past\n    # exposure -- exactly where both laws put their real probability), and\n    # those flips propagate.  Solve R = (fresh * (1 + R)) @ adjT by iteration\n    # (probabilities are small, so the fixed point is subcritical and fast).\n    a = f.a.astype(float)\n    P0 = np.where(a > 0, prob(a), 0.0)\n    P1 = prob(a + 1.0)\n    D = np.where(f.eligible, P1 - P0, 0.0)      # may be negative under H0: keep\n                                                # it, over-exposure is real harm\n    # a target is \"fresh\" if nothing has touched it before this round's hits\n    virgin = f.eligible & (np.clip(f.E, 0.0, None) - a <= 1e-9)\n    fresh = np.where(virgin, prob(np.ones_like(f.a)), 0.0)\n    R = fresh @ graph.adjT\n    for _ in range(6):\n        R = (fresh * (1.0 + R)) @ graph.adjT\n    R = np.minimum(R, 5.0)                      # cap against cycle inflation\n    # hub's self term (1-P0) under-credits seeds that already sit in the\n    # frontier; a seed is counted in the reward unconditionally\n    return (D * (1.0 + R)) @ graph.adjT + f.eligible * 1.0"
+    },
+    {
+     "name": "llm-gate-p",
+     "values": [
+      52.0,
+      50.5
+     ],
+     "gain": [
+      -1.5,
+      -7.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"gate-p\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # gate-2/gate-3 push fixed weights at \"one hit from done\" targets, ignoring\n    # the law.  Under H1 the marginal per extra in-neighbour is s*exp(-k*(E-a))\n    # / indeg^d -- constant in a until the s-cap -- so *finishing* a gate on an\n    # already-exposed target costs no extra fatigue and pays at full rate.\n    # Under H0 the (1+a)^g boost makes completion cheap relative to re-opening\n    # fatigued targets.  Weight both channels by the hypothesis's own prob:\n    a = f.a.astype(float)\n    P0 = np.where(a > 0, prob(a), 0.0)\n    P1 = prob(a + 1.0)\n    marg = np.where(f.eligible, P1 - P0, 0.0)\n    push = np.where(f.eligible & (a >= 1.0), marg, 0.0)          # finish gates\n    virgin = f.eligible & (a == 0) & (np.clip(f.E, 0.0, None) <= 1e-9)\n    open_ = np.where(virgin, np.clip(prob(np.ones_like(f.a)), 0.0, 1.0), 0.0)\n    return (1.5 * push + open_) @ graph.adjT + f.eligible * 1.0"
+    },
+    {
+     "name": "llm-marginal-two-step",
+     "values": [
+      52.0,
+      53.0
+     ],
+     "gain": [
+      -1.5,
+      -5.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"marginal-two-step\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Seed value = its own activation chance + one-step spread of a fresh activation,\n    # plus the second-round value that activating an out-neighbour creates there.\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    marginal = np.where(f.eligible, np.clip(P1 - P0, 0.0, 1.0), 0.0)\n    # immediate: spread + own activation\n    own = np.where(f.eligible, 1.0 - P0[:, None] * 0.0 + 0.0, 0.0)  # placeholder, replaced below\n    own = np.where(f.eligible, (1.0 - P0), 0.0)\n    one_step = marginal @ graph.adjT\n    # second round: if u activates, its out-neighbours get an active in-neighbour next round\n    Pn0 = prob(np.zeros_like(f.a)) * 0.0  # not useful; use current a+1 as next-round a\n    a_next = np.clip(f.a + marginal, 0.0, None)\n    Pn1 = prob(a_next + 1)\n    Pn0 = prob(a_next)\n    second = (np.clip(Pn1 - Pn0, 0.0, 1.0) * marginal) @ graph.adjT\n    # small reach term so flat gains don't collapse to lowest ids\n    reach = 1e-3 * f.eligible\n    return own + one_step + 0.3 * second + reach"
+    },
+    {
+     "name": "llm-reserve-gate",
+     "values": [
+      37.5,
+      32.5
+     ],
+     "gain": [
+      -16.0,
+      -25.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"reserve-gate\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Tradeoff: instead of only valuing immediate spread, credit seeds for pushing\n    # high-potential targets one step from activation (their prob(a+2) vs prob(a+1)\n    # is the value we \"reserve\"), while fatigue-free targets (low E) are worth more.\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    P2 = prob(f.a + 2)\n    marginal = np.where(f.eligible, np.clip(P1 - P0, 0.0, 1.0), 0.0)\n    # reserve value: leaving a node one-in-neighbour away from flipping next round\n    reserve = np.clip(P2 - P1, 0.0, 1.0)\n    # low past exposure -> activation not fatigued yet, worth more next round\n    freshness = np.exp(-0.5 * np.maximum(f.E - f.a, 0.0))\n    spread = (reserve * freshness) @ graph.adjT\n    own = np.where(f.eligible, 1.0 - P0, 0.0)\n    reach = 1e-3 * f.eligible\n    return own + spread + reach"
+    },
+    {
+     "name": "llm-fatigue-aware",
+     "values": [
+      54.5,
+      52.5
+     ],
+     "gain": [
+      1.0,
+      -5.5
+     ],
+     "accepted": true,
+     "source": "NAME = \"fatigue-aware\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Under H1/H0 exposure E suppresses future activation (exp(-k*E)) and indegree\n    # dilutes per-edge pushes (indeg^-d). Score seeds by the *durable* value of their\n    # spread: weight each out-neighbour's marginal activation by its future viability\n    # (low E, low indegree), and let prob carry the law's shape instead of fixing it.\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    marginal = np.where(f.eligible, np.clip(P1 - P0, 0.0, 1.0), 0.0)\n    indeg = np.maximum(f.indeg.astype(float), 1.0)[None, :]\n    discount = np.power(indeg, -0.5)\n    # viability of a target for future rounds: unheard nodes (low E) survive\n    viability = np.exp(-1.0 * np.maximum(f.E, 0.0)) * discount\n    spread = (marginal * viability) @ graph.adjT\n    own = np.where(f.eligible, 1.0 - P0, 0.0)\n    reach = 1e-3 * f.eligible\n    return own + spread + reach"
+    }
+   ],
+   "accepted": [
+    "llm-cascade",
+    "llm-fatigue-aware"
+   ],
+   "errors": [
+    "ValueError: matmul: dimension mismatch with signature (n,k=200),(k=2,m)->(n,m)"
+   ]
+  },
+  "library": [
+   "hub",
+   "prime",
+   "wait",
+   "gate-2",
+   "gate-3",
+   "hedge-2",
+   "hedge-3",
+   "llm-cascade",
+   "llm-fatigue-aware"
+  ],
+  "llm_usage": {
+   "calls": 5,
+   "cache_hits": 0,
+   "tokens_in": 8885,
+   "tokens_out": 22396
+  },
+  "build_seconds": 2573.900605201721
+ }
+}

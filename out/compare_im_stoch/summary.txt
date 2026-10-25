@@ -1,0 +1,20 @@
+dataset     law  oracle  flat-hub*  strata-true  strata  strata+llm  ws paper  ws best               ws mode  strata-ws     p  llm-ws  p_llm  llm-strata   p_l  strata-flathub   p_f
+   dblp FATIGUE    85.6       85.6         85.0    83.1        87.9      85.9     89.1       ws:static-agent       -6.0 0.021    -1.2  0.784         4.8 0.223            -2.5 0.430
+   dblp     HET    99.9       99.9        100.5    92.8        88.6      88.3     89.7  ws:static-agent+beam        3.1 0.243    -1.1  0.523        -4.2 0.077            -7.1 0.004
+   dblp   SOFT2   100.8      101.5        106.2    90.2       106.4      75.2     81.9     ws:average-degree        8.3 0.010    24.5  0.000        16.2 0.000           -11.3 0.000
+  hepph FATIGUE    80.5       80.5         79.9    72.2        81.3      72.1     77.1 ws:average-agent+beam       -4.9 0.016     4.2  0.048         9.1 0.002            -8.3 0.004
+  hepph     HET   101.8      101.8        105.4    94.3        88.5      85.2     94.5  ws:static-agent+beam       -0.2 0.942    -6.0  0.001        -5.8 0.073            -7.5 0.020
+  hepph   SOFT2    90.9       90.9         90.9    75.1        90.9      78.0     81.0       ws:static-agent       -5.9 0.044     9.9  0.000        15.8 0.000           -15.8 0.000
+   wiki FATIGUE    70.5       70.5         70.5    54.0        66.7      70.1     70.6       ws:agent-degree      -16.6 0.000    -3.9  0.006        12.7 0.000           -16.5 0.000
+   wiki     HET   121.0      121.0        118.4   121.0       119.4     106.6    111.0      ws:average-agent       10.0 0.001     8.4  0.003        -1.6 0.404             0.0 1.000
+   wiki   SOFT2   152.6      152.6        157.0   152.6       156.9     143.1    148.1  ws:static-agent+beam        4.5 0.001     8.8  0.000         4.3 0.002             0.0 1.000
+
+im-dblp-n200-s0-SOFT2 | hyps: ['llm:Law', 'llm:Law', 'llm:Law'] | ops accepted: ['llm-fatigue-1'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 10321, 'tokens_out': 21919} | build 2435s
+im-dblp-n200-s0-HET | hyps: ['llm:Law'] | ops accepted: ['llm-relay-2'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 7361, 'tokens_out': 24333} | build 2126s
+im-dblp-n200-s0-FATIGUE | hyps: ['llm:Law'] | ops accepted: ['llm-fresh-spill'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 8586, 'tokens_out': 17766} | build 3883s
+im-hepph-n200-s0-SOFT2 | hyps: ['llm:Law', 'llm:Law', 'llm:Law', 'llm:Law', 'llm:Law'] | ops accepted: ['llm-gate-future', 'llm-fatigue-lean'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 10036, 'tokens_out': 23507} | build 2186s
+im-hepph-n200-s0-HET | hyps: ['llm:Law'] | ops accepted: ['llm-fresh-cascade', 'llm-two-hop'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 7987, 'tokens_out': 10915} | build 3460s
+im-hepph-n200-s0-FATIGUE | hyps: ['llm:Law', 'llm:Law', 'llm:Law'] | ops accepted: ['llm-horizon-2', 'llm-decay-harvest'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 9561, 'tokens_out': 32154} | build 3396s
+im-wiki-n200-s0-SOFT2 | hyps: ['llm:Law'] | ops accepted: [] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 8379, 'tokens_out': 16630} | build 2756s
+im-wiki-n200-s0-HET | hyps: ['llm:Law'] | ops accepted: ['llm-diversify'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 8862, 'tokens_out': 18924} | build 2552s
+im-wiki-n200-s0-FATIGUE | hyps: ['llm:Law', 'llm:Law'] | ops accepted: ['llm-cascade', 'llm-fatigue-aware'] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 8885, 'tokens_out': 22396} | build 2574s

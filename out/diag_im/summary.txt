@@ -1,0 +1,62 @@
+                               mean   std
+dataset method          sims             
+dblp    flat-hub*       150   105.1  12.2
+        oracle          150   105.1  12.2
+        strata          150   109.8  14.6
+                        600   108.6  12.4
+                        2000   97.8   8.3
+        strata-map      150   109.8  14.6
+        strata-nobelief 150   109.8  14.6
+        strata-rollout  150   104.3  10.2
+        strata-true     150    97.0   6.5
+                        600   102.8   9.1
+                        2000   96.2   7.8
+hepph   flat-hub*       150   103.2   3.6
+        oracle          150   103.2   3.6
+        strata          150    95.1   9.2
+                        600    98.5   8.9
+                        2000   84.0   4.1
+        strata-map      150    95.1   9.2
+        strata-nobelief 150    95.1   9.2
+        strata-rollout  150    99.7   5.4
+        strata-true     150   100.1   7.1
+                        600    97.6   5.0
+                        2000   85.3   3.7
+wiki    flat-hub*       150   107.8   4.7
+        oracle          150   107.8   4.7
+        strata          150   108.3   5.7
+        strata-map      150   108.3   5.7
+        strata-nobelief 150   108.3   5.7
+        strata-rollout  150   103.0   5.2
+        strata-true     150   106.8   4.9
+
+dblp   strata           sims=150   mean= 109.8  vs flat-hub*  +4.7 (p=0.281)
+dblp   strata           sims=600   mean= 108.6  vs flat-hub*  +3.5 (p=0.166)
+dblp   strata           sims=2000  mean=  97.8  vs flat-hub*  -7.3 (p=0.124)
+dblp   strata-map       sims=150   mean= 109.8  vs flat-hub*  +4.7 (p=0.281)
+dblp   strata-nobelief  sims=150   mean= 109.8  vs flat-hub*  +4.7 (p=0.281)
+dblp   strata-rollout   sims=150   mean= 104.3  vs flat-hub*  -0.8 (p=0.797)
+dblp   strata-true      sims=150   mean=  97.0  vs flat-hub*  -8.1 (p=0.048)
+dblp   strata-true      sims=600   mean= 102.8  vs flat-hub*  -2.3 (p=0.472)
+dblp   strata-true      sims=2000  mean=  96.2  vs flat-hub*  -8.9 (p=0.080)
+hepph  strata           sims=150   mean=  95.1  vs flat-hub*  -8.1 (p=0.026)
+hepph  strata           sims=600   mean=  98.5  vs flat-hub*  -4.7 (p=0.100)
+hepph  strata           sims=2000  mean=  84.0  vs flat-hub* -19.2 (p=0.000)
+hepph  strata-map       sims=150   mean=  95.1  vs flat-hub*  -8.1 (p=0.026)
+hepph  strata-nobelief  sims=150   mean=  95.1  vs flat-hub*  -8.1 (p=0.026)
+hepph  strata-rollout   sims=150   mean=  99.7  vs flat-hub*  -3.5 (p=0.101)
+hepph  strata-true      sims=150   mean= 100.1  vs flat-hub*  -3.1 (p=0.160)
+hepph  strata-true      sims=600   mean=  97.6  vs flat-hub*  -5.6 (p=0.033)
+hepph  strata-true      sims=2000  mean=  85.3  vs flat-hub* -17.9 (p=0.000)
+wiki   strata           sims=150   mean= 108.3  vs flat-hub*  +0.5 (p=0.822)
+wiki   strata-map       sims=150   mean= 108.3  vs flat-hub*  +0.5 (p=0.822)
+wiki   strata-nobelief  sims=150   mean= 108.3  vs flat-hub*  +0.5 (p=0.822)
+wiki   strata-rollout   sims=150   mean= 103.0  vs flat-hub*  -4.8 (p=0.083)
+wiki   strata-true      sims=150   mean= 106.8  vs flat-hub*  -1.0 (p=0.515)
+
+# Root-decision probe, hepph WC, strata-true (true law), t=0, n_sims=2000
+planner's own simulator, flat hub from t=0 (64 paths): even 101.5, normal 87.6, static 98.4
+MCTS root estimates: hub k=2 (even's first step) 85.1 | k=4 87.0 | k=8 88.1 | k=20 (all budget now) 89.8
+-> chosen: hub k=20. Mean backup underestimates macros that keep budget for later
+   (~16 below their flat value), barely affects k=20 (no later decisions), so wider
+   trees (more sims) push the planner to front-load the budget.

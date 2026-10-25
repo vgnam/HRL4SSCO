@@ -1,0 +1,15 @@
+dataset law  oracle  flat-hub*  llm+newMCTS  nollm+newMCTS  llm+oldMCTS  llm-nollm     p  ws best  llm-ws  p(ws)
+   dblp CC2    88.0       83.0         99.0          102.0         94.0       -3.0   NaN     63.0    36.0    NaN
+   dblp  WC   105.1      105.1        108.1          105.8        100.5        2.3 0.532    103.7     4.4  0.398
+  hepph CC2    83.0       82.0         88.0           83.0         88.0        5.0   NaN     73.0    15.0    NaN
+  hepph  WC   103.2      103.2        103.1          100.4         95.3        2.7 0.342    102.0     1.1  0.699
+   wiki CC2   153.0      152.0        161.0          161.0        161.0        0.0   NaN    148.0    13.0    NaN
+   wiki  WC   107.8      107.8        105.9          106.7        106.0       -0.8 0.327     92.1    13.8  0.000
+oracle identical: True
+
+im-dblp-n200-s0-WC | hyps: ['llm:Law', 'llm:Law'] | ops accepted: [] | usage: {'calls': 0, 'cache_hits': 5, 'tokens_in': 0, 'tokens_out': 0} | build 814s
+im-dblp-n200-s0-CC2 | hyps: ['llm:Law', 'llm:Law', 'llm:Law', 'gate', 'llm:Law'] | ops accepted: ['llm-expo-bank', 'llm-marginal-self', 'llm-gate-self'] | usage: {'calls': 0, 'cache_hits': 4, 'tokens_in': 0, 'tokens_out': 0} | build 552s
+im-hepph-n200-s0-WC | hyps: ['llm:Law'] | ops accepted: ['llm-cascade-2', 'llm-cascade-3'] | usage: {'calls': 0, 'cache_hits': 5, 'tokens_in': 0, 'tokens_out': 0} | build 1286s
+im-hepph-n200-s0-CC2 | hyps: ['llm:Law', 'llm:Law', 'gate', 'llm:Law', 'llm:Law'] | ops accepted: ['llm-gate-hub-mix'] | usage: {'calls': 0, 'cache_hits': 4, 'tokens_in': 0, 'tokens_out': 0} | build 968s
+im-wiki-n200-s0-WC | hyps: ['lt'] | ops accepted: ['llm-tiered-gate'] | usage: {'calls': 0, 'cache_hits': 4, 'tokens_in': 0, 'tokens_out': 0} | build 1275s
+im-wiki-n200-s0-CC2 | hyps: ['llm:Law', 'llm:Law', 'llm:Law', 'llm:Law', 'gate'] | ops accepted: ['llm-chain-gate'] | usage: {'calls': 0, 'cache_hits': 4, 'tokens_in': 0, 'tokens_out': 0} | build 573s

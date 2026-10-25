@@ -1,0 +1,52 @@
+=== WC: value by method x sims
+sims                       150    600    2000
+dataset method                               
+dblp    flat-hub*         105.1    NaN    NaN
+        oracle            105.1    NaN    NaN
+        strata            105.8  106.3  104.1
+        strata(old)       109.8  108.6   97.8
+        strata-fulltree   109.8    NaN    NaN
+        strata-true       104.6  106.6  108.2
+        strata-true(old)   97.0  102.8   96.2
+hepph   flat-hub*         103.2    NaN    NaN
+        oracle            103.2    NaN    NaN
+        strata            100.4  100.3  101.5
+        strata(old)        95.1   98.5   84.0
+        strata-fulltree    95.1    NaN    NaN
+        strata-true       100.6  100.3  103.5
+        strata-true(old)  100.1   97.6   85.3
+wiki    flat-hub*         107.8    NaN    NaN
+        oracle            107.8    NaN    NaN
+        strata            106.7  107.9  107.5
+        strata(old)       108.3    NaN    NaN
+        strata-fulltree   108.3    NaN    NaN
+        strata-true       107.1  108.1  107.6
+        strata-true(old)  106.8    NaN    NaN
+
+dblp   strata       sims=150   new= 105.8 vs flat-hub*  +0.7 (p=0.852) | old= 109.8 new-old  -4.0 (p=0.263)
+dblp   strata       sims=600   new= 106.3 vs flat-hub*  +1.2 (p=0.753) | old= 108.6 new-old  -2.3 (p=0.467)
+dblp   strata       sims=2000  new= 104.1 vs flat-hub*  -1.0 (p=0.834) | old=  97.8 new-old  +6.3 (p=0.153)
+dblp   strata-true  sims=150   new= 104.6 vs flat-hub*  -0.5 (p=0.862) | old=  97.0 new-old  +7.6 (p=0.115)
+dblp   strata-true  sims=600   new= 106.6 vs flat-hub*  +1.5 (p=0.447) | old= 102.8 new-old  +3.8 (p=0.379)
+dblp   strata-true  sims=2000  new= 108.2 vs flat-hub*  +3.1 (p=0.292) | old=  96.2 new-old +12.0 (p=0.018)
+hepph  strata       sims=150   new= 100.4 vs flat-hub*  -2.8 (p=0.250) | old=  95.1 new-old  +5.3 (p=0.156)
+hepph  strata       sims=600   new= 100.3 vs flat-hub*  -2.9 (p=0.167) | old=  98.5 new-old  +1.8 (p=0.354)
+hepph  strata       sims=2000  new= 101.5 vs flat-hub*  -1.7 (p=0.329) | old=  84.0 new-old +17.5 (p=0.000)
+hepph  strata-true  sims=150   new= 100.6 vs flat-hub*  -2.6 (p=0.233) | old= 100.1 new-old  +0.5 (p=0.847)
+hepph  strata-true  sims=600   new= 100.3 vs flat-hub*  -2.9 (p=0.201) | old=  97.6 new-old  +2.7 (p=0.133)
+hepph  strata-true  sims=2000  new= 103.5 vs flat-hub*  +0.3 (p=0.860) | old=  85.3 new-old +18.2 (p=0.000)
+wiki   strata       sims=150   new= 106.7 vs flat-hub*  -1.1 (p=0.587) | old= 108.3 new-old  -1.6 (p=0.264)
+wiki   strata       sims=600   new= 107.9 vs flat-hub*  +0.1 (p=0.955)
+wiki   strata       sims=2000  new= 107.5 vs flat-hub*  -0.3 (p=0.879)
+wiki   strata-true  sims=150   new= 107.1 vs flat-hub*  -0.7 (p=0.715) | old= 106.8 new-old  +0.3 (p=0.865)
+wiki   strata-true  sims=600   new= 108.1 vs flat-hub*  +0.3 (p=0.861)
+wiki   strata-true  sims=2000  new= 107.6 vs flat-hub*  -0.2 (p=0.891)
+
+=== main table (sims=150): new STRATA vs old, flat-hub*, best WS-Option mode
+dataset law  oracle  flat-hub*  strata(new)  strata(old tree)  strata-true(new)  ws best              ws mode  new-ws  p(new,ws)
+   dblp CC2    88.0       83.0        102.0              99.0             102.0     63.0      ws:agent-degree    39.0        NaN
+   dblp  WC   105.1      105.1        105.8             109.8             104.6    103.7 ws:static-agent+beam     2.1      0.510
+  hepph CC2    83.0       82.0         83.0              83.0              83.0     73.0       ws:agent-score    10.0        NaN
+  hepph  WC   103.2      103.2        100.4              95.1             100.6    102.0       ws:agent-agent    -1.6      0.521
+   wiki CC2   153.0      152.0        161.0             161.0             161.0    148.0 ws:static-agent+beam    13.0        NaN
+   wiki  WC   107.8      107.8        106.7             108.3             107.1     92.1     ws:average-score    14.6      0.000
