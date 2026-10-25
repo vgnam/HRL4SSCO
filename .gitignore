@@ -5,3 +5,8 @@ logs/
 results/
 *.log
 .env
+RPP/datasets/foursquare/raw/
+IM/datasets/higgs_raw/
+IM/datasets/digg_raw/
+
+strata_cache/

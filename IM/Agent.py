@@ -7,7 +7,6 @@ from Env import *
 from Network import *
 from ReplayBuffer import *
 from torch.utils.tensorboard import SummaryWriter
-from collections import Counter
 
 CAPACITY = 20000
 BATCH_SIZE = 32
@@ -71,6 +70,9 @@ class Agent(nn.Module):
         self.epsilon = self.epsilon_start
 
         self.temperature = [10, 10]
+
+        # callable returning a new training graph each epoch; None means Erdos-Renyi graphs
+        self.graph_sampler = None
 
     def set_graph(self, graph):
         _, budget, T = self.env.get_info()
@@ -216,7 +218,10 @@ class Agent(nn.Module):
 
             # budget_policy, seeding_policy = 'average', 'agent'
 
-            graph = nx.erdos_renyi_graph(n=self.env.n, p=0.01, directed=True)
+            if self.graph_sampler is None:
+                graph = nx.erdos_renyi_graph(n=self.env.n, p=0.01, directed=True)
+            else:
+                graph = self.graph_sampler()
             self.set_graph(graph)
 
             for episode in range(num_iterations):
@@ -595,12 +600,13 @@ class Agent(nn.Module):
 
     def reward_by_score(self, state, action):
         # Get the inactive neighbors for the given state and action
-        inactive_nodes = self.env.get_inactive_neighbors(state, action)
+        inactive_edges = self.env.get_inactive_edges(state, action)
 
-        # Use a dictionary to count occurrences of each node
-        node_counts = Counter(inactive_nodes)
+        # Probability that each inactive neighbor is not activated by any of its active in-neighbors
+        not_activated = {}
+        for u, v in inactive_edges:
+            not_activated[v] = not_activated.get(v, 1) * (1 - self.env.get_edge_prob(u, v))
 
         # Calculate the reward, taking into account multiple occurrences of the same node
-        reward = sum((1 - (1 - self.env.get_edge_prob(node)) ** count)
-                     for node, count in node_counts.items())
+        reward = sum(1 - q for q in not_activated.values())
         return reward

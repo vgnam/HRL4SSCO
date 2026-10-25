@@ -54,12 +54,19 @@ class Agent(nn.Module):
         self.learning_step = [0, 0]
         self.target_update = 10
 
-    def set_loc(self, loc):
+        # callable returning (loc, initial_profit, profit_factor) each epoch; None means random instances
+        self.instance_sampler = None
+
+    def set_loc(self, loc, initial_profit=None, profit_factor=None):
         self.env.loc = loc
         self.env.dist = np.sqrt(
             ((loc[:, np.newaxis, :] - loc[np.newaxis, :, :]) ** 2).sum(axis=2))
         self.env.n = loc.shape[0]
-        self.env.initial_profit = np.random.uniform(0.5, 1.0, loc.shape[0])
+        if initial_profit is None:
+            initial_profit = np.random.uniform(0.5, 1.0, loc.shape[0])
+        self.env.initial_profit = np.array(initial_profit)
+        if profit_factor is not None:
+            self.env.profit_factor = profit_factor
         self.env.reset()
 
     def update_target(self):
@@ -265,8 +272,11 @@ class Agent(nn.Module):
             else:
                 budget_policy = 'agent'
 
-            loc = np.random.rand(self.env.n, 2) * 100
-            self.set_loc(loc)
+            if self.instance_sampler is None:
+                loc = np.random.rand(self.env.n, 2) * 100
+                self.set_loc(loc)
+            else:
+                self.set_loc(*self.instance_sampler())
 
             for episode in range(num_iterations):
                 print(f"epoch:{epoch}, episode:{episode} start")

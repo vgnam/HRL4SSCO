@@ -1,3 +1,4 @@
+import argparse
 import networkx as nx
 import numpy as np
 import random
@@ -6,6 +7,7 @@ import sys
 from Agent import Agent
 from Env import Env
 from Baselines import *
+from real_data import DATASETS, instance_sampler
 
 params = {
     'index': 1,
@@ -17,9 +19,23 @@ params = {
     'num_iteration': 10,
     'num_test': 100,
     'seed': 0,
+    'train_dataset': None,  # None: random instances
+    'test_dataset': None,   # None: random instance; flickr-* uses all POIs of the city as test_n
+    'sampling': 'knn',      # venue sampling for foursquare-*: 'knn' or 'uniform'
+    'drift': 'default',     # daily profit drift: 'default' (0.05) or 'fitted' from the dataset
 }
-if len(sys.argv) > 1:
-    params['seed'] = int(sys.argv[1])
+parser = argparse.ArgumentParser()
+parser.add_argument('seed', nargs='?', type=int, default=params['seed'])
+parser.add_argument('--train-dataset', choices=DATASETS, default=params['train_dataset'])
+parser.add_argument('--test-dataset', choices=DATASETS, default=params['test_dataset'])
+parser.add_argument('--sampling', choices=['knn', 'uniform'], default=params['sampling'])
+parser.add_argument('--drift', choices=['default', 'fitted'], default=params['drift'])
+args = parser.parse_args()
+params['seed'] = args.seed
+params['train_dataset'] = args.train_dataset
+params['test_dataset'] = args.test_dataset
+params['sampling'] = args.sampling
+params['drift'] = args.drift
 
 
 def set_seed(seed):
@@ -32,7 +48,20 @@ def set_seed(seed):
 
 
 def generate_job_name(params):
-    return f"job{params['index']}-n={params['n']}-text_n={params['test_n']}-budget={params['budget']}-T={params['T']}-epoch={params['num_epoch']}-iteration={params['num_iteration']}-seed={params['seed']}"
+    job_name = f"job{params['index']}-n={params['n']}-text_n={params['test_n']}-budget={params['budget']}-T={params['T']}-epoch={params['num_epoch']}-iteration={params['num_iteration']}-seed={params['seed']}"
+    if params['train_dataset'] is not None:
+        job_name += f"-train={params['train_dataset']}"
+    if params['test_dataset'] is not None:
+        job_name += f"-test={params['test_dataset']}"
+    if params['train_dataset'] is not None or params['test_dataset'] is not None:
+        job_name += f"-{params['sampling']}-drift={params['drift']}"
+    return job_name
+
+
+def dataset_instance_sampler(name, n, seed):
+    # flickr-* instances are whole cities, so n is not used
+    return instance_sampler(name, None if name.startswith('flickr') else n,
+                            method=params['sampling'], drift=params['drift'], seed=seed)
 
 
 # run the testing rounds and write results
@@ -61,9 +90,17 @@ if __name__ == "__main__":
     txt_name = f"results/{job_name}-training.txt"
     with open(txt_name, 'w', encoding='utf-8') as f:
         sys.stdout = f
-        loc = np.random.rand(params['n'], 2) * 100
-        env = Env(loc=loc, budget=params['budget'], T=params['T'])
+        if params['train_dataset'] is None:
+            loc = np.random.rand(params['n'], 2) * 100
+            env = Env(loc=loc, budget=params['budget'], T=params['T'])
+        else:
+            train_sampler = dataset_instance_sampler(params['train_dataset'], params['n'], params['seed'])
+            loc, initial_profit, profit_factor = train_sampler()
+            env = Env(loc=loc, initial_profit=initial_profit, budget=params['budget'],
+                      T=params['T'], profit_factor=profit_factor)
         model = Agent(env=env)
+        if params['train_dataset'] is not None:
+            model.instance_sampler = train_sampler
 
         train_cumulative_reward_list, test_cumulative_reward_list = model.train_model(
             num_epochs=params['num_epoch'], num_iterations=params['num_iteration']
@@ -74,8 +111,11 @@ if __name__ == "__main__":
         print("test_cumulative_reward_list: ", test_cumulative_reward_list)
 
     # Testing phase
-    loc = np.random.rand(params['test_n'], 2) * 100
-    model.set_loc(loc)
+    if params['test_dataset'] is None:
+        loc = np.random.rand(params['test_n'], 2) * 100
+        model.set_loc(loc)
+    else:
+        model.set_loc(*dataset_instance_sampler(params['test_dataset'], params['test_n'], params['seed'] + 1)())
     model.eval()
     model.discount = 1.0
 

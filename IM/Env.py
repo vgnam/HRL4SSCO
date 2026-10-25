@@ -11,13 +11,13 @@ class Env:
         self.graph = graph
         self.n = len(graph.nodes())
         self.nodes = list(range(self.n))
-        self.A = np.asmatrix(nx.to_numpy_array(graph))   # n * n
+        self.A = np.asmatrix(nx.to_numpy_array(graph, nodelist=self.nodes))   # n * n
         self.weighted = weighted
 
         if weighted:
             for u, v in self.graph.edges():
-                self.graph[u][v]['weight'] = self.get_edge_prob(v)
-            self.A = np.asmatrix(nx.to_numpy_array(graph, weight='weight'))
+                self.graph[u][v]['weight'] = self.get_edge_prob(u, v)
+            self.A = np.asmatrix(nx.to_numpy_array(graph, nodelist=self.nodes, weight='weight'))
 
         # parameters
         self.T = T
@@ -47,8 +47,8 @@ class Env:
 
         # propogation
         active_nodes = self.get_nodes_type(state, "active")
-        target_nodes = self.get_inactive_neighbors(nodes=active_nodes)
-        new_activated_nodes = self.activate_nodes(target_nodes)
+        target_edges = self.get_inactive_edges(nodes=active_nodes)
+        new_activated_nodes = self.activate_nodes(target_edges)
         new_activated_nodes = list(set(new_activated_nodes))
 
         # update state
@@ -76,10 +76,10 @@ class Env:
             v for v in seeds if random.uniform(0, 1) < self.p_active]
         return activated_seeds
 
-    def activate_nodes(self, nodes):
-        # given a inactive neighbor list, return active nodes
-        active_nodes = [v for v in nodes if random.uniform(
-            0, 1) < self.get_edge_prob(v)]
+    def activate_nodes(self, edges):
+        # given a list of (active, inactive neighbor) edges, return active nodes
+        active_nodes = [v for u, v in edges if random.uniform(
+            0, 1) < self.get_edge_prob(u, v)]
         return active_nodes
 
     def get_nodes_type(self, state, type):
@@ -99,19 +99,24 @@ class Env:
         return num
 
     def get_inactive_neighbors(self, state=None, nodes=None):
+        # output is a 1-d list
+        return [v for _, v in self.get_inactive_edges(state, nodes)]
+
+    def get_inactive_edges(self, state=None, nodes=None):
         if state is None:
             state = self.state
-        all_neighbors = []
-        for v in nodes:
-            neighbors = list(self.graph.neighbors(v))
-            all_neighbors.extend(neighbors)
-        inactive_neighbors = [
-            node for node in all_neighbors if state[node, 0] == 1 and node not in nodes]
-        # output is a 1-d list
-        return inactive_neighbors
+        all_edges = []
+        for u in nodes:
+            all_edges.extend((u, v) for v in self.graph.neighbors(u))
+        inactive_edges = [
+            (u, v) for u, v in all_edges if state[v, 0] == 1 and v not in nodes]
+        # output is a list of (source, target) edges
+        return inactive_edges
 
-    def get_edge_prob(self, node):
-        return 1/self.graph.in_degree(node)
+    def get_edge_prob(self, u, v):
+        # activation probability of edge u -> v: dataset probability if given,
+        # otherwise the weighted cascade 1 / in_degree(v)
+        return self.graph[u][v].get('p', 1/self.graph.in_degree(v))
 
     def is_stop(self, state):
         # since removed nodes can become inactive again.
@@ -135,6 +140,6 @@ class Env:
             inactive_neighbors = self.get_inactive_neighbors(nodes=[v])
             value = 0
             for u in inactive_neighbors:
-                value += self.get_edge_prob(u) if mode == 'score' else 1
+                value += self.get_edge_prob(v, u) if mode == 'score' else 1
             value_dict[v] = value
         return value_dict

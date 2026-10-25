@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Env:
-    def __init__(self, loc, initial_profit=None, budget=20, T=10, max_daily_distance=1.5, distance_penalty=5, start_node=0):
+    def __init__(self, loc, initial_profit=None, budget=20, T=10, max_daily_distance=1.5, distance_penalty=5, start_node=0, profit_factor=0.05):
         # parameters
         self.n = loc.shape[0]
         self.loc = np.array(loc)
@@ -17,7 +17,7 @@ class Env:
             self.initial_profit = np.random.uniform(0.5, 1.0, self.n)
         else:
             self.initial_profit = np.array(initial_profit)
-        self.profit_factor = 0.05  # random profit factor
+        self.profit_factor = profit_factor  # random profit factor
         self.profit_min = 0.3
         self.eta = 0.1  # coefficient for submodular function
 
