@@ -30,7 +30,9 @@ CSV_FIELDS = ("instance", "domain", "dataset", "n", "graph_seed", "law", "T", "B
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--datasets", nargs="+", required=True)
+    parser.add_argument("--domain", choices=("im", "rpp"), default="im")
+    parser.add_argument("--datasets", nargs="+", required=True,
+                        help="dataset names; 'random' is the synthetic RPP instance")
     parser.add_argument("--laws", nargs="+", default=["WC", "CC2"])
     parser.add_argument("--n", type=int, default=200)
     parser.add_argument("--T", type=int, default=10)
@@ -48,7 +50,8 @@ def main(argv=None):
     for dataset in args.datasets:
         rows, reports = [], {}
         for law in args.laws:
-            instance = protocol.make_instance("im", dataset=dataset, n=args.n, graph_seed=args.seed,
+            instance = protocol.make_instance(args.domain, dataset=None if dataset == "random" else dataset,
+                                              n=args.n, graph_seed=args.seed,
                                               law=law, T=args.T, B=args.budget)
             logs = protocol.make_logs(instance, policies=None, n_episodes=args.log_episodes,
                                       seed=args.seed)
@@ -69,7 +72,7 @@ def main(argv=None):
             for method, vals in (("oracle", oracle), ("strata", values)):
                 for ep in range(args.episodes):
                     rows.append({
-                        "instance": instance.name, "domain": "im", "dataset": dataset,
+                        "instance": instance.name, "domain": args.domain, "dataset": dataset,
                         "n": args.n, "graph_seed": args.seed, "law": law, "T": args.T,
                         "B": args.budget, "method": method, "episode": ep,
                         "value": float(vals[ep]), "oracle_value": float(oracle[ep]),

@@ -52,8 +52,10 @@ class StrataConfig:
     mode: str = "mean"                 # mean | cvar | maxmin | optimistic
     alpha: float = 0.2
     n_sims: int = 150
+    tree: str = "root"                 # root | full (original open-loop MCTS tree)
     M: int = 8
     no_hypset: bool = False
+    true_law: bool = False             # upper bound: plan with the instance's true law only
     no_belief: bool = False
     llm_rounds: int = 2
     llm_k: int = 3
@@ -90,11 +92,22 @@ class StrataAgent:
         val, train = logs[:n_val], logs[n_val:] or logs
 
         level = cfg.level_im if domain == "im" else cfg.level_rpp
-        cands, law_report = llm_propose.propose(
-            domain, train, val, obj, chat=self.chat, source=cfg.law_source, level=level,
-            rounds=cfg.llm_rounds, k=cfg.llm_k, budget_calls=cfg.llm_budget, seed=cfg.seed)
+        if cfg.true_law:
+            cands, law_report = [instance.law], {"source": "true"}
+        else:
+            cands, law_report = llm_propose.propose(
+                domain, train, val, obj, chat=self.chat, source=cfg.law_source, level=level,
+                rounds=cfg.llm_rounds, k=cfg.llm_k, budget_calls=cfg.llm_budget, seed=cfg.seed)
         kw = {"indeg": obj.indeg, "graph": obj} if domain == "im" else {"env": obj}
-        hset = hyp.build_hypothesis_set(cands, val, eps=cfg.eps, cap=cfg.cap, domain=domain, **kw)
+        if cfg.true_law and domain != "im":
+            # RPP drift laws have no likelihood (logpdf); with one hypothesis none is needed
+            from strata.core.types import Hypothesis, HypothesisSet
+
+            hset = HypothesisSet([Hypothesis(instance.law, 0.0, 1.0, 0)],
+                                 np.zeros((1, 1), dtype=np.int64))
+        else:
+            hset = hyp.build_hypothesis_set(cands, val, eps=cfg.eps, cap=cfg.cap, domain=domain,
+                                            **kw)
         if not hset.hyps:
             raise RuntimeError("no hypothesis survived L1 on %s" % instance.name)
         if cfg.no_hypset:
@@ -121,7 +134,8 @@ class StrataAgent:
                                      seed=cfg.seed, T=instance.T)
         else:
             planner = MCTSPlanner(library, n_sims=cfg.n_sims, M_leaf=max(1, cfg.M // 2),
-                                  mode=cfg.mode, alpha=cfg.alpha, seed=cfg.seed, T=instance.T)
+                                  mode=cfg.mode, alpha=cfg.alpha, seed=cfg.seed, T=instance.T,
+                                  tree=cfg.tree)
 
         self.domain, self.obj, self.hset, self.library, self.planner = domain, obj, hset, library, planner
         self._key = instance.name
@@ -206,4 +220,8 @@ def make_strata_methods():
         "strata-rollout": {"planner": "rollout"},
         "strata-cvar": {"mode": "cvar"},
         "strata-maxmin": {"mode": "maxmin"},
+        # a single hypothesis needs no belief updates (RPP drift laws have no logpdf)
+        "strata-true": {"true_law": True, "operator_source": "hand", "no_belief": True},
+        "strata-fulltree": {"tree": "full"},
+        "strata-true-fulltree": {"true_law": True, "operator_source": "hand", "tree": "full"},
     }

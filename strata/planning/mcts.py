@@ -63,11 +63,23 @@ class MCTSPlanner(RolloutPlanner):
         ``ceil(k0 * (N + 1) ** alpha)`` children.
     M_leaf
         Paths used by the flat leaf evaluation.
+    tree
+        ``'root'`` (default): only the root branches; every simulation plays
+        one root macro and continues with the flat base policy, with common
+        random numbers across root macros. Each value is then an unbiased
+        estimate of "this macro, then the base policy", so replanning every
+        round is a rollout improvement of the base policy. ``'full'``: the
+        original open-loop tree; its mean backup averages over exploratory
+        macros later in the episode, which undervalues macros that keep budget
+        and makes the planner front-load the budget as the tree widens.
+    min_visits
+        With ``tree='root'``, visits a root macro needs to compete in the
+        final decision.
     """
 
     def __init__(self, library, base=None, n_sims=200, c_uct=1.0, widening=(2.0, 0.5),
                  M_leaf=4, M_prior=4, mode="mean", seed=0, T=None, alpha=0.2, regions=None,
-                 **kwargs):
+                 tree="root", min_visits=3, **kwargs):
         super().__init__(library, base=base, M=M_leaf, mode=mode, seed=seed, T=T,
                          alpha=alpha, regions=regions, **kwargs)
         self.M_prior = max(1, int(M_prior))
@@ -75,6 +87,10 @@ class MCTSPlanner(RolloutPlanner):
         self.c_uct = float(c_uct)
         self.k0, self.k_alpha = float(widening[0]), float(widening[1])
         self.M_leaf = max(1, int(M_leaf))
+        self.tree = str(tree).lower()
+        if self.tree not in ("root", "full"):
+            raise ValueError("tree must be 'root' or 'full'")
+        self.min_visits = max(1, int(min_visits))
         self.last_info = {}
 
     # ------------------------------------------------------------- helpers
@@ -125,6 +141,10 @@ class MCTSPlanner(RolloutPlanner):
         root_W = np.zeros((n_root, m))
         lo, hi = np.inf, -np.inf
 
+        if self.tree == "root":
+            return self._choose_root(obj, domain, state, int(t), T, spec, laws, weights,
+                                     rng, root, root_N, root_W)
+
         for _ in range(self.n_sims):
             li = int(rng.choice(m, p=weights))
             law = laws[li]
@@ -167,6 +187,33 @@ class MCTSPlanner(RolloutPlanner):
                     root_W[ci, li] += G
                 lo, hi = min(lo, G), max(hi, G)
 
+        return self._decide(root, root_N, root_W, weights)
+
+    def _choose_root(self, obj, domain, state, t, T, spec, laws, weights, rng, root,
+                     root_N, root_W):
+        """UCT over root macros, each simulation = root macro + flat base continuation."""
+        m = len(laws)
+        lo, hi = np.inf, -np.inf
+        for _ in range(self.n_sims):
+            if not root.macros:
+                break
+            li = int(rng.choice(m, p=weights))
+            law = laws[li]
+            allowed = self._allowed(root)
+            untried = [i for i in range(allowed) if i not in root.children]
+            ci = untried[0] if untried else self._uct(root, allowed, lo, hi)
+            child = root.children.setdefault(ci, _Node())
+            # common random numbers: the j-th visit of every root macro shares one stream
+            crn = np.random.default_rng([self.seed, t, child.N])
+            st = _clone_state(state)
+            G = self._step(obj, domain, st, root.macros[ci], law, crn)
+            G += self._leaf(obj, domain, st, law, T, spec, crn)
+            child.N += 1
+            child.W += G
+            root.N += 1
+            root_N[ci, li] += 1
+            root_W[ci, li] += G
+            lo, hi = min(lo, G), max(hi, G)
         return self._decide(root, root_N, root_W, weights)
 
     def _root_prior(self, obj, domain, state, t, T, spec, laws, weights):
@@ -227,6 +274,11 @@ class MCTSPlanner(RolloutPlanner):
         overall = root_W.sum(axis=1) / np.maximum(root_N.sum(axis=1), 1)
         # per-law means; a law never sampled at a child falls back to the child's mean
         per_law = np.where(root_N > 0, root_W / np.maximum(root_N, 1), overall[:, None])
+        if self.tree == "root":
+            # only macros with enough visits compete (guards against lucky one-offs)
+            trusted = visited[root_N[visited].sum(axis=1) >= self.min_visits]
+            if trusted.size:
+                visited = trusted
         scores = np.asarray(aggregate(per_law[visited], weights, self.mode, self.alpha))
         best = int(visited[int(np.argmax(scores))])
         self.last_info = {

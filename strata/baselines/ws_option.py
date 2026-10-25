@@ -195,15 +195,21 @@ class IMEnvAdapter:
             STATUS_INACTIVE,
             np.where(state[:, 1] == 1, STATUS_ACTIVE, STATUS_REMOVED),
         )
+        # The 3-column state has no exposure; carry it over when stepping the
+        # adapter's own trajectory so memory laws (rho > 0, e.g. FATIGUE) see
+        # their past exposure. Throw-away states start from zero exposure.
+        own = np.array_equal(state, self.state)
         sim = im_env.SimState(
             status=status,
-            E=np.zeros((1, self.n), dtype=np.float32),
+            E=self._sim.E.copy() if own else np.zeros((1, self.n), dtype=np.float32),
             t=0,
             budget_left=0,
         )
         _, reward, info = im_env.step(
             self.graph_obj, self.law, sim, seeds, self.rng, return_info=True
         )
+        if own:
+            self._sim = sim
         self.state = _to_im_state(sim.status[0])
         is_null = bool(len(seeds) + int(np.asarray(info["new"][0]).sum()) == 0)
         done = self.is_stop(self.state)

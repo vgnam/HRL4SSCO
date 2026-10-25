@@ -248,16 +248,11 @@ def test_end_to_end_im_run_and_report(tmp_path, capsys):
     with open(path, newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     methods = {row["method"] for row in rows}
-    assert methods == {
-        "flat-hub*",
-        "flat-any*",
-        "wc-default",
-        "libA",
-        "libB",
-        "libC",
-        "oracle",
-    }
-    assert len(rows) == 7 * 2  # one row per (method, episode)
+    expected = {"flat-hub*", "flat-any*", "wc-default", "libA", "libB", "libC", "oracle"}
+    if ws_option.available():
+        expected.add("ws-option")
+    assert methods == expected
+    assert len(rows) == len(expected) * 2  # one row per (method, episode)
 
     table = report_mod.main([path])
     for method in methods:
@@ -306,7 +301,7 @@ def test_end_to_end_rpp_run_and_report(tmp_path, capsys):
     assert path == out
     with open(path, newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
-    assert len(rows) == 7 * 2
+    assert len(rows) == (8 if ws_option.available() else 7) * 2
     assert all(np.isfinite(float(row["regret"])) for row in rows)
 
     table = report_mod.main([path])

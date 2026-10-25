@@ -26,6 +26,9 @@ from strata.eval import protocol
 
 BUDGET_POLICIES = ("agent", "average", "static", "normal")
 SEEDING_POLICIES = ("agent", "agent+beam", "score", "degree")
+# RPP/Agent.py only has the agent and average budget policies.
+RPP_BUDGET_POLICIES = ("agent", "average")
+RPP_SEEDING_POLICIES = ("agent", "agent+beam")
 
 CSV_FIELDS = ("instance", "dataset", "n", "law", "method", "episode", "value",
               "oracle_value", "regret", "train_seconds")
@@ -36,6 +39,7 @@ class WSModePolicy:
 
     def __init__(self, trained: ws_option.WSOptionPolicy, budget_policy, seeding_policy):
         self.agent = trained.agent
+        self.adapter = trained.eval_adapter
         self.budget_policy = budget_policy
         self.seeding_policy = seeding_policy
 
@@ -62,7 +66,32 @@ class WSModePolicy:
             return agent.beam_search(state3, k)
         return agent.get_action_score(state=state3, budget=k, mode=self.seeding_policy)
 
+    def _act_rpp(self, state, t):
+        agent, adapter = self.agent, self.adapter
+        # beam search reads the day and position from the adapter
+        adapter.t = int(state.t)
+        adapter.profit = np.asarray(state.profit[0], dtype=np.float64).copy()
+        adapter.current_node = int(state.current[0])
+        budget_r = int(np.asarray(state.budget_left).reshape(-1)[0])
+        adapter.remaining_budget = budget_r
+        feat, context = adapter.get_state(), adapter.get_context()
+        t_r = adapter.T - int(t)
+        if self.budget_policy == "agent":
+            k = agent.get_option(feat, context, t_r, budget_r, epsilon=0)
+        else:
+            k = agent.average_policy(t_r, budget_r)
+        k = int(min(k, budget_r))
+        if k == 0:
+            return np.zeros(0, dtype=np.int64)
+        if self.seeding_policy == "agent+beam":
+            action = agent.beam_search(feat, context, k, beta=10, gamma=10)
+        else:
+            action = agent.get_action(feat, context, k, epsilon=0)
+        return np.asarray(action, dtype=np.int64)
+
     def act(self, state, t: int) -> np.ndarray:
+        if getattr(state, "profit", None) is not None:
+            return self._act_rpp(state, t)
         state3 = ws_option._to_im_state(state.status[0])
         budget_r = int(np.asarray(state.budget_left).reshape(-1)[0])
         t_r = self.agent.env.T - int(t)
@@ -89,7 +118,9 @@ def _oracle_values(path, instance_name, episodes):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--datasets", nargs="+", required=True)
+    parser.add_argument("--domain", choices=("im", "rpp"), default="im")
+    parser.add_argument("--datasets", nargs="+", required=True,
+                        help="dataset names; 'random' is the synthetic RPP instance")
     parser.add_argument("--laws", nargs="+", default=["WC", "CC2"])
     parser.add_argument("--n", type=int, default=200)
     parser.add_argument("--T", type=int, default=10)
@@ -104,11 +135,14 @@ def main(argv=None):
 
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     rows = []
+    rpp = args.domain == "rpp"
+    budget_policies = RPP_BUDGET_POLICIES if rpp else BUDGET_POLICIES
+    seeding_policies = RPP_SEEDING_POLICIES if rpp else SEEDING_POLICIES
     for dataset in args.datasets:
         for law in args.laws:
             instance = protocol.make_instance(
-                "im", dataset=dataset, n=args.n, graph_seed=args.seed, law=law,
-                T=args.T, B=args.budget,
+                args.domain, dataset=None if dataset == "random" else dataset, n=args.n,
+                graph_seed=args.seed, law=law, T=args.T, B=args.budget,
             )
             trained = ws_option.WSOptionPolicy(
                 epochs=args.epochs, iterations=args.iterations, seed=args.seed
@@ -119,8 +153,8 @@ def main(argv=None):
             print("%s trained in %.0fs" % (instance.name, train_seconds), flush=True)
 
             oracle = _oracle_values(args.oracle_csv, instance.name, args.episodes)
-            for budget_policy in BUDGET_POLICIES:
-                for seeding_policy in SEEDING_POLICIES:
+            for budget_policy in budget_policies:
+                for seeding_policy in seeding_policies:
                     policy = WSModePolicy(trained, budget_policy, seeding_policy)
                     values = protocol.evaluate(
                         policy, instance, episodes=args.episodes, seed=args.seed

@@ -108,3 +108,23 @@ def test_mcts_runs_on_rpp_and_matches_flat_harvest():
                     break
             out.append(total)
     assert np.mean(totals) >= np.mean(flat) - 0.25 * abs(np.mean(flat)) - 1e-9
+
+
+def test_root_tree_values_match_flat_continuation_and_do_not_front_load():
+    # The full open-loop tree undervalued macros that keep budget for later and,
+    # with enough simulations, spent the whole budget in round 0.  The root tree
+    # values "macro, then base" without that bias.
+    graph = _dblp(200)
+    law = im_laws.make_law("WC", graph)
+    belief = _belief([law], "im")
+    lib = OperatorLibrary.standard("im")
+    T, B = 6, 12
+    planner = MCTSPlanner(lib, base="even", n_sims=400, seed=0, T=T, tree="root")
+    state = im_env.make_state(graph, M=1, budget_left=B)
+    macro = planner.choose(graph, state, belief, 0)
+    assert int(macro.k) < B
+    info = planner.last_info
+    scores = dict(zip(info["macros"], np.asarray(info["scores"]).ravel()))
+    dump = [s for m, s in scores.items() if m.op == "hub" and m.region == 0 and int(m.k) == B]
+    if dump:
+        assert scores[macro] >= dump[0]

@@ -13,8 +13,9 @@ episode seeds (common random numbers).  The output is one CSV row per
 (instance, method, episode), with the per-episode regret relative to the oracle.
 
 Methods: ``flat-hub*``, ``flat-any*``, ``wc-default``, ``libA``, ``libB``,
-``libC``, ``oracle``, ``ws-option``.  ``ws-option`` is skipped (with a warning)
-when PyTorch / the original agent files cannot be imported.
+``libC``, ``oracle``, ``ws-option``, ``greedy``, ``ga``.  ``ws-option`` is skipped
+(with a warning) when PyTorch / the original agent files cannot be imported;
+``greedy`` and ``ga`` (the WS-Option paper's RPP baselines) are RPP-only.
 """
 
 from __future__ import annotations
@@ -41,6 +42,8 @@ METHODS = (
     "libC",
     "oracle",
     "ws-option",
+    "greedy",
+    "ga",
 )
 
 CSV_FIELDS = (
@@ -127,6 +130,14 @@ def _make_policy(method: str, instance, logs, args):
         if not ws_option.available():
             return None
         return ws_option.WSOptionPolicy(seed=args.seed)
+    if method in ("greedy", "ga"):
+        if domain != "rpp":
+            return None  # the paper's GA / greedy baselines are RPP-only
+        from strata.baselines import rpp_classic
+
+        if method == "greedy":
+            return rpp_classic.GreedyPolicy(seed=args.seed)
+        return rpp_classic.GAPolicy(seed=args.seed)
     if method.startswith("strata"):
         from strata.agent import StrataAgent, make_strata_methods
 
