@@ -1,17 +1,25 @@
        dataset   law  oracle  flat-any*  greedy    ga  ws paper  ws best            ws mode  strata-true  strata  strata+llm  s-ws  p_ws  s-ga  p_ga  llm-s  p_llm
-   flickr-Melb CROWD    9.94       9.94  -17.66  8.99      6.05     8.06 average-agent+beam        10.03   10.03         NaN  1.97   0.0  1.03   0.0    NaN    NaN
-   flickr-Melb   IID   18.32      18.32  -17.66 15.34      4.86    14.79 average-agent+beam        18.28   18.34         NaN  3.55   0.0  3.00   0.0    NaN    NaN
-   flickr-Melb SPILL   17.65      17.65  -17.66 16.83      4.54    14.57      average-agent        18.62   18.62         NaN  4.05   0.0  1.79   0.0    NaN    NaN
-   flickr-Melb TREND   22.16      22.16  -17.66 19.78    -14.78    16.80 average-agent+beam        22.30   22.33         NaN  5.53   0.0  2.55   0.0    NaN    NaN
-foursquare-NYC CROWD   11.79      11.79    7.79  9.44      5.07     8.23 average-agent+beam        12.60   11.81         NaN  3.57   0.0  2.37   0.0    NaN    NaN
-foursquare-NYC   IID   14.02      14.02    9.19 10.99     -9.42    10.84 average-agent+beam        14.02   14.11         NaN  3.26   0.0  3.12   0.0    NaN    NaN
-foursquare-NYC SPILL   13.89      13.89    8.59 11.28      9.64    10.96 average-agent+beam        14.03   14.05         NaN  3.09   0.0  2.78   0.0    NaN    NaN
-foursquare-NYC TREND   14.46      14.46    8.24 11.43    -10.28    11.04 average-agent+beam        14.54   14.51         NaN  3.47   0.0  3.08   0.0    NaN    NaN
+   flickr-Melb CROWD    9.94       9.94  -17.66  8.99      6.05     8.06 average-agent+beam        10.03   10.03       10.19  1.97   0.0  1.03   0.0   0.17   0.01
+   flickr-Melb   IID   18.32      18.32  -17.66 15.34      4.86    14.79 average-agent+beam        18.28   18.34       18.31  3.55   0.0  3.00   0.0  -0.03   0.06
+   flickr-Melb SPILL   17.65      17.65  -17.66 16.83      4.54    14.57      average-agent        18.62   18.62       18.62  4.05   0.0  1.79   0.0   0.00    NaN
+   flickr-Melb TREND   22.16      22.16  -17.66 19.78    -14.78    16.80 average-agent+beam        22.30   22.33       22.33  5.53   0.0  2.55   0.0   0.00    NaN
+foursquare-NYC CROWD   11.79      11.79    7.79  9.44      5.07     8.23 average-agent+beam        12.60   11.81       12.39  3.57   0.0  2.37   0.0   0.58   0.00
+foursquare-NYC   IID   14.02      14.02    9.19 10.99     -9.42    10.84 average-agent+beam        14.02   14.11       14.00  3.26   0.0  3.12   0.0  -0.11   0.09
+foursquare-NYC SPILL   13.89      13.89    8.59 11.28      9.64    10.96 average-agent+beam        14.03   14.05       14.05  3.09   0.0  2.78   0.0   0.00    NaN
+foursquare-NYC TREND   14.46      14.46    8.24 11.43    -10.28    11.04 average-agent+beam        14.54   14.51       14.51  3.47   0.0  3.08   0.0   0.00    NaN
         random CROWD   15.50      15.50   11.48 13.20      9.35    11.13 average-agent+beam        16.71   16.15       16.15  5.01   0.0  2.94   0.0   0.00    NaN
         random   IID   18.48      18.48   13.39 15.06     13.08    13.94 average-agent+beam        18.47   18.36       18.34  4.42   0.0  3.30   0.0  -0.02   0.73
         random SPILL   18.61      18.61   12.29 14.87      5.45    13.47 average-agent+beam        18.60   18.59       18.59  5.12   0.0  3.73   0.0   0.00    NaN
         random TREND   18.98      18.98   12.70 15.45     13.88    13.88   agent-agent+beam        19.07   19.14       19.20  5.26   0.0  3.69   0.0   0.06   0.05
 
+rpp-flickr-Melb-n88-s0-IID | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift'] | ops accepted: [] | usage: {'calls': 6, 'cache_hits': 0, 'tokens_in': 13139, 'tokens_out': 12595} | build 1184s
+rpp-flickr-Melb-n88-s0-TREND | hyps: ['uniform', 'uniform', 'gaussian', 'gaussian', 'llm:Drift', 'llm:Drift'] | ops accepted: [] | usage: {'calls': 6, 'cache_hits': 0, 'tokens_in': 9090, 'tokens_out': 12507} | build 3469s
+rpp-flickr-Melb-n88-s0-SPILL | hyps: ['uniform', 'gaussian', 'llm:Drift', 'uniform', 'mixture', 'llm:Drift'] | ops accepted: [] | usage: {'calls': 6, 'cache_hits': 0, 'tokens_in': 9946, 'tokens_out': 9420} | build 1931s
+rpp-flickr-Melb-n88-s0-CROWD | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'gaussian', 'gaussian'] | ops accepted: [] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 11556, 'tokens_out': 12520} | build 3638s
+rpp-foursquare-NYC-n100-s0-IID | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift'] | ops accepted: [] | usage: {'calls': 6, 'cache_hits': 0, 'tokens_in': 11297, 'tokens_out': 10795} | build 1534s
+rpp-foursquare-NYC-n100-s0-TREND | hyps: ['uniform', 'uniform', 'uniform', 'uniform', 'uniform', 'uniform'] | ops accepted: [] | usage: {'calls': 4, 'cache_hits': 0, 'tokens_in': 5156, 'tokens_out': 8397} | build 495s
+rpp-foursquare-NYC-n100-s0-SPILL | hyps: ['uniform', 'llm:Drift', 'llm:Drift', 'uniform', 'uniform', 'uniform'] | ops accepted: [] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 6759, 'tokens_out': 6440} | build 711s
+rpp-foursquare-NYC-n100-s0-CROWD | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'gaussian'] | ops accepted: [] | usage: {'calls': 7, 'cache_hits': 0, 'tokens_in': 15872, 'tokens_out': 18359} | build 7048s
 rpp-random-n100-s0-IID | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift'] | ops accepted: [] | usage: {'calls': 6, 'cache_hits': 0, 'tokens_in': 12291, 'tokens_out': 7533} | build 696s
 rpp-random-n100-s0-TREND | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'uniform', 'uniform'] | ops accepted: [] | usage: {'calls': 7, 'cache_hits': 0, 'tokens_in': 15916, 'tokens_out': 12015} | build 4069s
 rpp-random-n100-s0-SPILL | hyps: ['uniform', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'uniform', 'uniform'] | ops accepted: [] | usage: {'calls': 5, 'cache_hits': 0, 'tokens_in': 7553, 'tokens_out': 7038} | build 841s

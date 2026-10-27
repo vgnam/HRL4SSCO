@@ -1,0 +1,48 @@
+=== IM stochastic
+dataset     law  oracle  true   dsl   llm   poe   mix  ws best  mix-llm  p_llm  mix-poe  p_poe  mix-dsl  p_dsl  mix-ws  p_ws
+   dblp FATIGUE    85.6  85.0  83.1  87.9  84.6  85.4     89.1     -2.5   0.49      0.8   0.74      2.3   0.46    -3.7  0.29
+   dblp     HET    99.9 100.5  92.8  88.6  87.8  98.5     89.7      9.9   0.01     10.7   0.01      5.7   0.10     8.8  0.01
+   dblp   SOFT2   100.8 106.2  90.2 106.4 104.9 104.9     81.9     -1.5   0.16      0.0   1.00     14.7   0.00    23.0  0.00
+  hepph FATIGUE    80.5  79.9  72.2  81.3  78.3  83.9     77.1      2.6   0.36      5.6   0.09     11.7   0.00     6.8  0.02
+  hepph     HET   101.8 105.4  94.3  88.5  95.8  99.1     94.5     10.6   0.01      3.3   0.22      4.8   0.06     4.6  0.17
+  hepph   SOFT2    90.9  90.9  75.1  90.9  90.9  90.9     81.0      0.0    NaN      0.0    NaN     15.8   0.00     9.9  0.00
+   wiki FATIGUE    70.5  70.5  54.0  66.7  68.4  68.4     70.6      1.7   0.12      0.0   1.00     14.4   0.00    -2.2  0.05
+   wiki     HET   121.0 118.4 121.0 119.4 116.5 120.0    111.0      0.6   0.70      3.5   0.14     -1.0   0.56     9.0  0.00
+   wiki   SOFT2   152.6 157.0 152.6 156.9 157.0 157.3    148.1      0.4   0.34      0.3   0.34      4.7   0.00     9.2  0.00
+  im-dblp-n200-s0-SOFT2 | mix: [(12, 1, 1), (4, 1, 1)] | alts 6 changing 0 | hyps: ['llm:Law', 'llm:Law', 'llm:Law', 'mix[C=1,K=1]'] | calls 0 | build 554s
+  im-dblp-n200-s0-HET | mix: [(12, 11, 3), (3, 3, 3)] | alts 10 changing 1 | hyps: ['mix[C=3,K=11]', 'mix-drop3[C=3,K=10]'] | calls 1 | build 5088s
+  im-dblp-n200-s0-FATIGUE | mix: [(12, 3, 3), (3, 3, 3)] | alts 2 changing 1 | hyps: ['mix[C=3,K=3]', 'mix-drop1[C=3,K=2]'] | calls 6 | build 3197s
+  im-hepph-n200-s0-SOFT2 | mix: [(12, 2, 1), (2, 2, 3), (2, 2, 1)] | alts 7 changing 0 | hyps: ['llm:Law', 'llm:Law', 'llm:Law', 'mix[C=1,K=2]'] | calls 5 | build 1867s
+  im-hepph-n200-s0-HET | mix: [(12, 5, 3), (6, 3, 3)] | alts 9 changing 1 | hyps: ['mix[C=3,K=5]', 'mix-drop1[C=3,K=4]'] | calls 6 | build 16739s
+  im-hepph-n200-s0-FATIGUE | mix: [(12, 2, 3), (2, 1, 3)] | alts 1 changing 0 | hyps: ['mix[C=3,K=2]'] | calls 5 | build 3033s
+  im-wiki-n200-s0-SOFT2 | mix: [(12, 2, 1), (3, 1, 1), (2, 1, 3)] | alts 7 changing 1 | hyps: ['llm:Law', 'mix[C=1,K=2]', 'mix-boot4[C=1,K=2]', 'llm:Law'] | calls 6 | build 2306s
+  im-wiki-n200-s0-HET | mix: [(4, 3, 3), (12, 12, 3)] | alts 13 changing 0 | hyps: ['mix[C=3,K=12]'] | calls 5 | build 4765s
+  im-wiki-n200-s0-FATIGUE | mix: [(6, 4, 3), (12, 3, 2)] | alts 1 changing 0 | hyps: ['mix[C=3,K=4]'] | calls 5 | build 5195s
+
+=== RPP
+       dataset   law  oracle  true   dsl   llm   poe   mix  ws best  mix-llm  p_llm  mix-poe  p_poe  mix-dsl  p_dsl  mix-ws  p_ws
+   flickr-Melb CROWD    9.94 10.03 10.03 10.19  9.82 10.03     8.06    -0.17   0.01     0.20   0.06     0.00    NaN    1.97   0.0
+   flickr-Melb   IID   18.32 18.28 18.34 18.31 18.32 18.32    14.79     0.01   0.18     0.00    NaN    -0.02   0.20    3.53   0.0
+   flickr-Melb SPILL   17.65 18.62 18.62 18.62 18.62 18.63    14.57     0.00   0.98     0.00   0.98     0.00   0.98    4.05   0.0
+   flickr-Melb TREND   22.16 22.30 22.33 22.33 22.33 22.33    16.80     0.00    NaN     0.00    NaN     0.00    NaN    5.53   0.0
+foursquare-NYC CROWD   11.79 12.60 11.81 12.39 11.81 12.41     8.23     0.03   0.80     0.60   0.00     0.60   0.00    4.18   0.0
+foursquare-NYC   IID   14.02 14.02 14.11 14.00 14.11 14.00    10.84     0.00   0.34    -0.11   0.10    -0.11   0.10    3.16   0.0
+foursquare-NYC SPILL   13.89 14.03 14.05 14.05 14.05 14.05    10.96    -0.00   0.99    -0.00   0.99    -0.00   0.99    3.09   0.0
+foursquare-NYC TREND   14.46 14.54 14.51 14.51 14.51 14.55    11.04     0.03   0.49     0.03   0.49     0.03   0.49    3.50   0.0
+        random CROWD   15.50 16.71 16.15 16.15 16.50 16.53    11.13     0.39   0.00     0.03   0.82     0.39   0.00    5.40   0.0
+        random   IID   18.48 18.47 18.36 18.34 18.45 18.41    13.94     0.07   0.44    -0.04   0.50     0.05   0.57    4.46   0.0
+        random SPILL   18.61 18.60 18.59 18.59 18.59 18.64    13.47     0.05   0.44     0.05   0.44     0.05   0.44    5.17   0.0
+        random TREND   18.98 19.07 19.14 19.20 19.14 19.14    13.88    -0.06   0.17    -0.00   0.95    -0.00   0.95    5.26   0.0
+  rpp-flickr-Melb-n88-s0-IID | mix: [(12, 1, 1)] | alts 5 changing 0 | hyps: ['mix[K=1,uniform]', 'uniform', 'uniform', 'uniform'] | calls 4 | build 307s
+  rpp-flickr-Melb-n88-s0-TREND | mix: [(12, 2, 1)] | alts 6 changing 0 | hyps: ['mix[K=2,uniform]', 'uniform', 'uniform', 'llm:Drift'] | calls 5 | build 865s
+  rpp-flickr-Melb-n88-s0-SPILL | mix: [(12, 1, 1)] | alts 5 changing 0 | hyps: ['mix[K=1,uniform]', 'uniform', 'gaussian', 'uniform'] | calls 4 | build 707s
+  rpp-flickr-Melb-n88-s0-CROWD | mix: [(12, 3, 1)] | alts 4 changing 0 | hyps: ['mix[K=3,uniform]', 'gaussian', 'gaussian', 'gaussian'] | calls 8 | build 1257s
+  rpp-foursquare-NYC-n100-s0-IID | mix: [(12, 1, 1)] | alts 6 changing 0 | hyps: ['mix[K=1,uniform]', 'uniform', 'uniform', 'uniform'] | calls 5 | build 535s
+  rpp-foursquare-NYC-n100-s0-TREND | mix: [(12, 1, 1)] | alts 4 changing 0 | hyps: ['llm:Drift', 'mix[K=1,uniform]', 'uniform', 'uniform'] | calls 4 | build 617s
+  rpp-foursquare-NYC-n100-s0-SPILL | mix: [(12, 1, 1)] | alts 4 changing 0 | hyps: ['mix[K=1,uniform]', 'uniform', 'llm:Drift', 'llm:Drift'] | calls 5 | build 964s
+  rpp-foursquare-NYC-n100-s0-CROWD | mix: [(12, 6, 1)] | alts 3 changing 0 | hyps: ['mix[K=6,uniform]', 'gaussian', 'gaussian', 'gaussian'] | calls 7 | build 3263s
+  rpp-random-n100-s0-IID | mix: [(12, 1, 1)] | alts 5 changing 0 | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift'] | calls 7 | build 601s
+  rpp-random-n100-s0-TREND | mix: [(12, 2, 1)] | alts 5 changing 0 | hyps: ['mix[K=2,uniform]', 'uniform', 'uniform', 'uniform'] | calls 6 | build 815s
+  rpp-random-n100-s0-SPILL | mix: [(12, 1, 1)] | alts 4 changing 0 | hyps: ['mix[K=1,uniform]', 'uniform', 'llm:Drift', 'llm:Drift'] | calls 4 | build 489s
+  rpp-random-n100-s0-CROWD | mix: [(12, 5, 1)] | alts 2 changing 0 | hyps: ['mix[K=5,gaussian]', 'gaussian', 'gaussian', 'gaussian'] | calls 5 | build 1010s
+

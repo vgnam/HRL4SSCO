@@ -1,0 +1,1220 @@
+{
+ "rpp-random-n100-s0-IID": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "mix",
+   "mix_boot": 6,
+   "decision_sims": 60,
+   "decision_margin": 0.01,
+   "mix_disagree_round": true,
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 5,
+    "accepted": 19,
+    "rejected": 6,
+    "errors": [
+     "AttributeError: 'DriftFeatures' object has no attribute 'kernel_sum'",
+     "KeyError: 'width'",
+     "KeyError: 'width'",
+     "KeyError: 'width'",
+     "AttributeError: 'DriftFeatures' object has no attribute 'crowd'",
+     "AttributeError: 'DriftFeatures' object has no attribute 'crowd'"
+    ],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 126364.0026883279,
+      "pool": 12
+     },
+     {
+      "round": 1,
+      "best_ll_val": 126362.33809672191,
+      "pool": 17
+     },
+     {
+      "round": 2,
+      "best_ll_val": 126352.32476780954,
+      "pool": 22
+     }
+    ],
+    "usage": {
+     "calls": 5,
+     "cache_hits": 0,
+     "tokens_in": 9037,
+     "tokens_out": 5255
+    }
+   },
+   "n_llm": 19,
+   "n_dsl": 16,
+   "mix": {
+    "groups": [
+     {
+      "experts": 12,
+      "kept": 1,
+      "components": 1,
+      "val_ll": 126363.78,
+      "train_ll": 294828.68
+     }
+    ]
+   },
+   "mix_alternatives": {
+    "base_macro": [
+     "harvest",
+     1,
+     2
+    ],
+    "alternatives": 5,
+    "decision_changing": []
+   }
+  },
+  "hypotheses": [
+   [
+    "llm:Drift",
+    126368.40170630753,
+    0
+   ],
+   [
+    "llm:Drift",
+    126366.73911701,
+    1
+   ],
+   [
+    "llm:Drift",
+    126366.4091245925,
+    2
+   ],
+   [
+    "llm:Drift",
+    126366.10530333142,
+    3
+   ],
+   [
+    "llm:Drift",
+    126364.58940809811,
+    4
+   ],
+   [
+    "mix[K=1,uniform]",
+    126363.78468455607,
+    5
+   ],
+   [
+    "uniform",
+    121653.66941205836,
+    6
+   ],
+   [
+    "uniform",
+    121653.18889229938,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-reversion-skim",
+     "values": [
+      18.012144346586354,
+      18.014412103374244,
+      18.016386355579257,
+      18.015449773190284,
+      18.01513450297155,
+      18.00126362824657,
+      18.063221821317086,
+      17.74160460226243
+     ],
+     "gain": [
+      -0.3266728699419019,
+      -0.32530674061305476,
+      -0.324953456166746,
+      -0.325576331922548,
+      -0.32558134078593426,
+      -0.3249062650990737,
+      -0.4094183990194793,
+      -0.7321838789325419
+     ],
+     "accepted": false,
+     "source": "NAME = \"reversion-skim\"\n\ndef score(env, state, region_mask):\n    # H2: profits are pulled back toward their initial values (kappa > 0).\n    # POIs currently ABOVE their initial level are decaying -> harvest them now,\n    # before the gap closes; POIs below initial are recovering -> leave them.\n    # Adding the gap to profit reorders harvest toward over-initial POIs.\n    gap = state.profit - env.initial_profit[None, :]\n    s = state.profit + 2.0 * gap\n    return s * region_mask[None, :]"
+    },
+    {
+     "name": "llm-tilt-defer",
+     "values": [
+      -0.49936916340355375,
+      -0.49936916340355375,
+      -0.49936916340355375,
+      -0.49936916340355375,
+      -0.49936916340355375,
+      -0.49936916340355375,
+      -0.49936916340355375,
+      -0.49936916340355375
+     ],
+     "gain": [
+      -18.83818637993181,
+      -18.839088007390853,
+      -18.840708975149557,
+      -18.840395268516385,
+      -18.840085007161036,
+      -18.825539056749196,
+      -18.97200938374012,
+      -18.973157644598526
+     ],
+     "accepted": false,
+     "source": "NAME = \"tilt-defer\"\n\ndef score(env, state, region_mask):\n    # H1: profits tilt linearly about the row-center \u2014 low-profit POIs decay,\n    # high-profit POIs appreciate. So the harvesting order should be INVERTED\n    # relative to profit: grab the depreciating (below-center) POIs early and\n    # defer the appreciating (above-center) ones to late days when they are worth more.\n    center = env.initial_profit[None, :].mean()  # global mid-range level (matches H1's proxy scale)\n    row_center = state.profit.mean(axis=1, keepdims=True)\n    s = row_center - 0.5 * (state.profit - row_center) + 0.1 * (state.profit - center)\n    # net: mild absolute-profit anchor plus a flip toward below-center POIs\n    return s * region_mask[None, :]"
+    },
+    {
+     "name": "llm-ring-hugger",
+     "values": [
+      18.033287400238766,
+      18.03388191240666,
+      18.03524884061776,
+      18.035093531919372,
+      18.034785110312644,
+      18.020489239385363,
+      18.14190559894763,
+      18.142545483688853
+     ],
+     "gain": [
+      -0.3055298162894893,
+      -0.3058369315806395,
+      -0.306090971128242,
+      -0.30593257319345923,
+      -0.3059307334448391,
+      -0.3056806539602803,
+      -0.3307346213889346,
+      -0.33124299750611996
+     ],
+     "accepted": false,
+     "source": "NAME = \"ring-hugger\"\n\ndef score(env, state, region_mask):\n    # H3: visiting a POI uplifts the (0.5, 1.5] distance ring (+b1) and erodes\n    # far POIs (>2.5, -b3). Existing operators ignore this state-dependence.\n    # Stay inside the actively-uplifted ring: boost POIs near the current\n    # position so their drift bonus keeps accruing while we harvest them,\n    # and demote far POIs whose profits are bleeding out.\n    cur = np.asarray(state.current, dtype=int)\n    d = env.dist[cur, :]                      # (M, n) distance from each agent's current POI\n    near = (d > 0.5) & (d <= 1.5)\n    far = d > 2.5\n    s = state.profit + 0.6 * near - 0.3 * far\n    return s * region_mask[None, :]"
+    },
+    {
+     "name": "llm-decay-first-harvest",
+     "values": [
+      18.203867757572702,
+      18.20508485912587,
+      18.206747232290407,
+      18.206284261433737,
+      18.205973051714956,
+      18.191315096415373,
+      17.91479189063412,
+      17.917267636564738
+     ],
+     "gain": [
+      -0.13494945895555333,
+      -0.13463398486143063,
+      -0.134592579455596,
+      -0.1347418436790946,
+      -0.13474279204252682,
+      -0.13485479693027003,
+      -0.5578483297024448,
+      -0.556520844630235
+     ],
+     "accepted": false,
+     "source": "NAME = \"decay-first-harvest\"\n\ndef score(env, state, region_mask):\n    # H2 (mean reversion): nodes above their initial profit are expected to decay,\n    # nodes below it are expected to recover. Harvest the fallers first so their\n    # value is banked before it erodes, and leave the risers in the ground to grow.\n    init = env.initial_profit[None, :]\n    gap = state.profit - init  # >0 means expected decay under H2\n    s = state.profit + 0.5 * gap\n    return np.where(region_mask[None, :], s, -1e9)"
+    },
+    {
+     "name": "llm-late-tilt-defer",
+     "values": [
+      18.24115530769828,
+      18.241829262847265,
+      18.243333830113308,
+      18.243128143886686,
+      18.242818960792356,
+      18.22856916044084,
+      18.363416674402004,
+      18.365078778657356
+     ],
+     "gain": [
+      -0.09766190882997705,
+      -0.09788958114003421,
+      -0.0980059816326957,
+      -0.09789796122614547,
+      -0.09789688296512722,
+      -0.09760073290480165,
+      -0.10922354593456163,
+      -0.10870970253761669
+     ],
+     "accepted": false,
+     "source": "NAME = \"late-tilt-defer\"\n\ndef score(env, state, region_mask):\n    # H1 (profit-level tilt): high-profit POIs drift up, low-profit drift down.\n    # Early on, skim the cheap/mid nodes; as t grows, tilt the ranking toward\n    # the high-profit nodes so they are visited after their uplift accrues.\n    # The tilt coefficient grows linearly with t, so early days are near-harvest\n    # and late days strongly prefer the top of the profit distribution.\n    center = env.initial_profit[None, :].mean(axis=1, keepdims=True)\n    tilt = 0.04 * state.t  # ~0.04 at t=1 up to ~0.4 at t=10\n    s = state.profit + tilt * (state.profit - center)\n    return np.where(region_mask[None, :], s, -1e9)"
+    },
+    {
+     "name": "llm-dip-day-sacrifice",
+     "values": [
+      16.51971507433947,
+      16.520637247496584,
+      16.522234561774816,
+      16.521828063482047,
+      16.521366733696333,
+      16.50843267510396,
+      16.628270482346583,
+      16.62979211776375
+     ],
+     "gain": [
+      -1.819102142188786,
+      -1.8190815964907152,
+      -1.8191052499711873,
+      -1.8191980416307842,
+      -1.8193491100611503,
+      -1.8177372182416818,
+      -1.8443697379899824,
+      -1.8439963634312235
+     ],
+     "accepted": false,
+     "source": "NAME = \"dip-day-sacrifice\"\n\ndef score(env, state, region_mask):\n    # H4 (day-6 dip): the dip is uniform across POIs, so the ranking cannot dodge\n    # it \u2014 but WHICH nodes are spent on the dip day can be. Sacrifice the\n    # lowest-value nodes on t=6 (their lost uplift is smallest) and keep the\n    # high-value nodes for the rebound days (t=1, t=10 edges and the rest).\n    p = state.profit\n    dip = np.abs(state.t - 6.0) < 0.5\n    rowmax = np.max(p, axis=1, keepdims=True)\n    s = np.where(dip, rowmax - p + 1e-3, p)  # invert on the dip day, harvest otherwise\n    return np.where(region_mask[None, :], s, -1e9)"
+    }
+   ],
+   "accepted": [],
+   "errors": []
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 7,
+   "cache_hits": 0,
+   "tokens_in": 12426,
+   "tokens_out": 11879
+  },
+  "build_seconds": 600.871809720993
+ },
+ "rpp-random-n100-s0-TREND": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "mix",
+   "mix_boot": 6,
+   "decision_sims": 60,
+   "decision_margin": 0.01,
+   "mix_disagree_round": true,
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 4,
+    "accepted": 14,
+    "rejected": 6,
+    "errors": [
+     "ValueError: matmul: Input operand 1 has a mismatch in its core dimension 0, with gufunc signature (n?,k),(k,m?)->(n?,m?) (size 2 is different from 100)",
+     "KeyError: 'width'",
+     "KeyError: 'width'",
+     "ValueError: operands could not be broadcast together with remapped shapes [original->remapped]: (2,)  and requested shape (2,100)",
+     "ValueError: einstein sum subscripts string contains too many subscripts for operand 1",
+     "AttributeError: 'DriftFeatures' object has no attribute 'crowd'"
+    ],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 125651.0342621219,
+      "pool": 12
+     },
+     {
+      "round": 1,
+      "best_ll_val": 125642.93674380747,
+      "pool": 17
+     }
+    ],
+    "usage": {
+     "calls": 4,
+     "cache_hits": 0,
+     "tokens_in": 7244,
+     "tokens_out": 4389
+    }
+   },
+   "n_llm": 14,
+   "n_dsl": 16,
+   "mix": {
+    "groups": [
+     {
+      "experts": 12,
+      "kept": 2,
+      "components": 1,
+      "val_ll": 125656.84,
+      "train_ll": 293126.93
+     }
+    ]
+   },
+   "mix_alternatives": {
+    "base_macro": [
+     "harvest",
+     3,
+     2
+    ],
+    "alternatives": 5,
+    "decision_changing": []
+   }
+  },
+  "hypotheses": [
+   [
+    "mix[K=2,uniform]",
+    125656.8448821618,
+    0
+   ],
+   [
+    "uniform",
+    121001.49111609318,
+    1
+   ],
+   [
+    "uniform",
+    121000.50957445323,
+    2
+   ],
+   [
+    "uniform",
+    115709.03862998789,
+    3
+   ],
+   [
+    "uniform",
+    114600.75736157411,
+    4
+   ],
+   [
+    "llm:Drift",
+    114019.28837444517,
+    5
+   ],
+   [
+    "uniform",
+    113886.98988312378,
+    6
+   ],
+   [
+    "llm:Drift",
+    113879.39328883398,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-gentrify-frontload",
+     "values": [
+      17.323936391299217,
+      17.43760887482552,
+      17.432451447172,
+      16.968411081920607,
+      17.085579654955474,
+      16.868817690077464,
+      17.075448031931707,
+      16.955979207000205
+     ],
+     "gain": [
+      -1.4019696259460837,
+      -1.5129342878909426,
+      -1.5332403530727063,
+      -1.6188284644173052,
+      -1.5588518259954114,
+      -1.6517561597843056,
+      -1.353413947522153,
+      -1.6170213807016083
+     ],
+     "accepted": false,
+     "source": "NAME = \"gentrify-frontload\"\n\ndef score(env, state, region_mask):\n    # Under H7, profit drifts by amp * (initial - mean(initial)) each day.\n    # Front-load POIs whose profit is falling (above-mean initial), defer risers:\n    # their value is recovered later at no travel cost.\n    M, n = state.profit.shape\n    init = env.initial_profit[None, :]\n    dev = init - init.mean()\n    amp = 0.02  # plausible drift magnitude per day\n    remaining = env.T - state.t  # days left to recoup deferred gains\n    # net advantage of visiting now vs one day later\n    delta = -amp * dev  # positive where profit is shrinking -> visit now\n    urgency = 1.0 / max(remaining, 1)\n    adj = state.profit + urgency * delta * n\n    # mild distance shaping toward unvisited, reachable POIs\n    d = env.dist[state.current][:, None] if False else env.dist[np.arange(M)[:, None], state.current[:, None]] if False else None\n    dcur = env.dist[state.current]  # (M, n)\n    dcur = np.where(region_mask[None, :], dcur, np.inf)\n    prox = 1.0 / (1.0 + dcur)\n    prox = np.nan_to_num(prox, nan=0.0, posinf=0.0)\n    val = adj * (0.7 + 0.3 * prox)\n    val = np.where(state.visited, -np.inf, val)\n    return np.where(np.isfinite(val), val, -1e9)"
+    },
+    {
+     "name": "llm-region-trend-chase",
+     "values": [
+      16.40042520800322,
+      16.451167479053115,
+      16.45430959475452,
+      14.95321716458937,
+      14.65473793616425,
+      15.12598497041828,
+      14.502242639952316,
+      14.582095324293164
+     ],
+     "gain": [
+      -2.3254808092420802,
+      -2.4993756836633487,
+      -2.511382205490186,
+      -3.634022381748542,
+      -3.989693544786636,
+      -3.3945888794434893,
+      -3.926619339501544,
+      -3.9909052634086493
+     ],
+     "accepted": false,
+     "source": "NAME = \"region-trend-chase\"\n\ndef score(env, state, region_mask):\n    # Under H5, drift is amp * (region - mean(region)) per day: low-region POIs\n    # decay fastest, high-region POIs grow. Visit decaying regions early,\n    # bank growing regions for late days when their drift has compounded.\n    M, n = state.profit.shape\n    r = np.asarray(region_mask, dtype=float)\n    r_mean = 0.5  # region ids roughly centered under mask; mask narrows choice\n    amp = 0.02\n    # expected profit tomorrow if deferred\n    drift_now = amp * (r - r_mean)\n    horizon = max(env.T - state.t, 1)\n    # value of visiting today vs at end of horizon\n    net_now = state.profit - drift_now * 0.0\n    net_late = state.profit + drift_now * horizon\n    # gain from waiting (clipped so we never fully starve a region)\n    wait_gain = np.clip(net_late - net_now, 0.0, None)\n    val = state.profit - 0.5 * wait_gain / horizon\n    # travel economy: prefer near current node\n    dcur = env.dist[state.current]\n    dcur = np.where(region_mask[None, :], dcur, 1e6)\n    val = val / (1.0 + 0.15 * dcur)\n    val = np.where(state.visited, -np.inf, val)\n    return np.where(np.isfinite(val), val, -1e9)"
+    },
+    {
+     "name": "llm-one-step-activation",
+     "values": [
+      18.687987548352986,
+      18.672434298108783,
+      18.721209677128208,
+      18.42547260271333,
+      18.54631181175216,
+      18.376577203389353,
+      18.339623924188494,
+      18.569765939385682
+     ],
+     "gain": [
+      -0.03791846889231465,
+      -0.27810886460768103,
+      -0.24448212311649797,
+      -0.16176694362458122,
+      -0.09811966919872361,
+      -0.1439966464724165,
+      -0.08923805526536555,
+      -0.0032346483161305173
+     ],
+     "accepted": false,
+     "source": "NAME = \"one-step-activation\"\n\ndef score(env, state, region_mask):\n    # Existing operators harvest greedily and never trade current spread\n    # against POIs sitting just below a profitable level that drift will\n    # activate. Score = current value plus the option value of POIs that\n    # become top-tier within a couple of days, discounted by travel cost.\n    M, n = state.profit.shape\n    p = np.where(state.visited, -np.inf, state.profit)\n    # per-row unvisited profit scale for \"activation\" threshold\n    ref = np.nanmax(np.where(region_mask[None, :], p, -np.inf), axis=1, keepdims=True)\n    ref = np.where(np.isfinite(ref), ref, 0.0)\n    amp = 0.02\n    # how many days until this POI reaches ~90% of the row max under drift\n    gap = np.clip(ref - state.profit, 0.0, None)\n    days_to_act = gap / max(amp * ref.mean() if ref.mean() > 0 else amp, 1e-9)\n    option = np.exp(-np.clip(days_to_act, 0.0, 5.0))  # near-activated get high option value\n    dcur = env.dist[state.current]\n    dcur = np.where(region_mask[None, :], dcur, 1e6)\n    near = np.exp(-dcur / max(np.nanmedian(np.where(np.isfinite(dcur), dcur, np.nan)), 1e-9))\n    near = np.nan_to_num(near, nan=0.0)\n    val = state.profit * (1.0 + 0.6 * option) * (0.6 + 0.4 * near)\n    val = np.where(state.visited, -np.inf, val)\n    return np.where(np.isfinite(val), val, -1e9)"
+    },
+    {
+     "name": "llm-gentrify-defer-growth",
+     "values": [
+      16.660420657415862,
+      16.793448818690322,
+      16.88089493690663,
+      16.322073711654824,
+      15.951872689955916,
+      15.950379706008356,
+      15.783955493225589,
+      15.990496324212941
+     ],
+     "gain": [
+      -2.065485359829438,
+      -2.1570943440261416,
+      -2.0847968633380773,
+      -2.2651658346830885,
+      -2.692558790994969,
+      -2.5701941438534135,
+      -2.6449064862282707,
+      -2.5825042634888717
+     ],
+     "accepted": false,
+     "source": "NAME = \"gentrify-defer-growth\"\n\ndef score(env, state, region_mask):\n    # Gentrification-aware: POIs whose *initial* profit is below the cross-POI mean\n    # are depreciating -> visit them NOW before they lose value.\n    # Appreciating (above-mean) POIs are deferred; the greedy step will naturally\n    # pick them later at their (higher) drifted profit.\n    profit = state.profit                      # (M, n)\n    M, n = profit.shape\n    init = np.asarray(env.initial_profit, dtype=float)   # (n,)\n    dev = init - init.mean()\n    std = init.std() + 1e-9\n    devn = np.clip(dev / std, -2.0, 2.0)       # (n,) normalized appreciation rate\n    T = float(env.T)\n    t = float(state.t)\n    remain = max(T - t, 0.0) / max(T - 1.0, 1.0)   # fraction of horizon left\n    # Depreciating POIs (devn<0) get boosted, more so early when there is time\n    # to come back for the appreciators; appreciating POIs demoted (wait for drift).\n    drift_adj = -0.45 * devn[None, :] * remain\n    return profit + drift_adj * np.abs(profit).mean(axis=1, keepdims=True)"
+    },
+    {
+     "name": "llm-region-decay-first",
+     "values": [
+      18.750371514833486,
+      18.84245811878608,
+      18.86020510471597,
+      18.560075847285624,
+      18.481789859326746,
+      18.532953596103017,
+      18.298199639219597,
+      18.468654574698846
+     ],
+     "gain": [
+      0.02446549758818506,
+      -0.10808504393038376,
+      -0.10548669552873591,
+      -0.027163699052287882,
+      -0.16264162162413953,
+      0.012379746241247602,
+      -0.13066234023426304,
+      -0.1043460130029672
+     ],
+     "accepted": false,
+     "source": "NAME = \"region-decay-first\"\n\ndef score(env, state, region_mask):\n    # H5-style linear regional drift: low-region POIs depreciate, high-region\n    # appreciate. Front-load the losers, defer the winners.\n    profit = state.profit                      # (M, n)\n    n = profit.shape[1]\n    r = np.asarray(getattr(env, \"region\", None), dtype=float) \\\n        if hasattr(env, \"region\") else np.nonzero(region_mask)[0].astype(float)\n    r = np.asarray(r, dtype=float)\n    if r.size != n:                            # fall back to region_mask ordering\n        r = np.zeros(n)\n        idx = np.nonzero(region_mask)[0]\n        r[idx] = np.arange(idx.size, dtype=float)\n    dev = r - r.mean()\n    std = dev.std() + 1e-9\n    devn = np.clip(dev / std, -2.0, 2.0)\n    T = float(env.T)\n    t = float(state.t)\n    remain = max(T - t, 0.0) / max(T - 1.0, 1.0)\n    drift_adj = -0.45 * devn[None, :] * remain\n    return profit + drift_adj * np.abs(profit).mean(axis=1, keepdims=True)"
+    },
+    {
+     "name": "llm-slack-gated-drift",
+     "values": [
+      16.246125041085953,
+      16.2439416351706,
+      16.281671970780266,
+      15.802206460273318,
+      15.596103740506233,
+      15.574143125041182,
+      15.461147659149301,
+      15.596814496821558
+     ],
+     "gain": [
+      -2.479780976159347,
+      -2.706601527545864,
+      -2.6840198294644395,
+      -2.785033086064594,
+      -3.048327740444652,
+      -2.946430724820587,
+      -2.967714320304559,
+      -2.9761860908802547
+     ],
+     "accepted": false,
+     "source": "NAME = \"slack-gated-drift\"\n\ndef score(env, state, region_mask):\n    # Defer appreciating POIs only when there is slack (more unvisited POIs than\n    # remaining visiting capacity); when the schedule is tight, revert to pure\n    # profit so nothing valuable is stranded. Mild distance tie-break improves\n    # routing efficiency over the pure-profit rule.\n    profit = state.profit                      # (M, n)\n    M, n = profit.shape\n    init = np.asarray(env.initial_profit, dtype=float)\n    dev = init - init.mean()\n    std = init.std() + 1e-9\n    devn = np.clip(dev / std, -2.0, 2.0)       # (n,) appreciation rate\n    T = float(env.T)\n    t = float(state.t)\n    visited_cnt = state.visited.sum(axis=1)                     # (M,)\n    slack = (n - visited_cnt) / max(T - t + 1.0, 1.0) - 1.0     # >0 => spare capacity\n    gate = np.clip(slack, 0.0, 1.0)[:, None]                    # (M, 1)\n    remain = max(T - t, 0.0) / max(T - 1.0, 1.0)\n    drift_adj = -0.5 * devn[None, :] * remain * gate\n    cur = np.asarray(state.current, dtype=int)\n    d = env.dist[np.arange(M), cur]                             # (M,)\n    dist_pen = 0.05 * (d / (d.mean() + 1e-9))[:, None]\n    return profit + drift_adj * np.abs(profit).mean(axis=1, keepdims=True) - dist_pen"
+    }
+   ],
+   "accepted": [],
+   "errors": []
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 6,
+   "cache_hits": 0,
+   "tokens_in": 9340,
+   "tokens_out": 8229
+  },
+  "build_seconds": 814.9607646465302
+ },
+ "rpp-random-n100-s0-SPILL": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "mix",
+   "mix_boot": 6,
+   "decision_sims": 60,
+   "decision_margin": 0.01,
+   "mix_disagree_round": true,
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 2,
+    "accepted": 10,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 126224.64021947686,
+      "pool": 8
+     },
+     {
+      "round": 1,
+      "best_ll_val": 126224.64021983612,
+      "pool": 13
+     }
+    ],
+    "usage": {
+     "calls": 2,
+     "cache_hits": 0,
+     "tokens_in": 3448,
+     "tokens_out": 2449
+    }
+   },
+   "n_llm": 10,
+   "n_dsl": 16,
+   "mix": {
+    "groups": [
+     {
+      "experts": 12,
+      "kept": 1,
+      "components": 1,
+      "val_ll": 126267.74,
+      "train_ll": 294650.17
+     }
+    ]
+   },
+   "mix_alternatives": {
+    "base_macro": [
+     "harvest",
+     2,
+     2
+    ],
+    "alternatives": 4,
+    "decision_changing": []
+   }
+  },
+  "hypotheses": [
+   [
+    "mix[K=1,uniform]",
+    126267.59101279083,
+    0
+   ],
+   [
+    "uniform",
+    121600.02520902453,
+    1
+   ],
+   [
+    "llm:Drift",
+    117010.48368492669,
+    2
+   ],
+   [
+    "llm:Drift",
+    116900.848874109,
+    3
+   ],
+   [
+    "llm:Drift",
+    116780.83324489498,
+    4
+   ],
+   [
+    "llm:Drift",
+    116778.03747644623,
+    5
+   ],
+   [
+    "llm:Drift",
+    116745.18233962239,
+    6
+   ],
+   [
+    "llm:Drift",
+    116738.93167433742,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-weekly-phase-timer",
+     "values": [
+      8.517426900289125,
+      8.551895183991997,
+      8.311902918153905,
+      8.336720894164594,
+      8.371732908317629,
+      8.29159724064738,
+      8.322051916263096,
+      8.299895126706561
+     ],
+     "gain": [
+      -9.980816925641177,
+      -10.090644971246666,
+      -10.16522666165255,
+      -10.181279501632615,
+      -10.212420103851617,
+      -10.146532460745053,
+      -10.163219121382149,
+      -10.059101132490602
+     ],
+     "accepted": false,
+     "source": "NAME = \"weekly-phase-timer\"\n\ndef score(env, state, region_mask):\n    # Exploits H3: day-of-cycle phase. On days predicted low (dips near t=3,7),\n    # shift priority toward POIs with high profit now and low re-visit value later.\n    M, n = state.profit.shape\n    ang = 2.0 * math.pi * state.t / 7.0\n    # projected next-day phase value: if tomorrow is up-phase, delay mediocre POIs\n    next_ang = 2.0 * math.pi * (state.t + 1) / 7.0\n    phase_gap = (np.sin(next_ang) - np.sin(ang)) * np.ones_like(state.profit)\n    # delayable POIs = low profit now; rare-high profit POIs harvested regardless\n    rank = state.profit - np.median(state.profit, axis=1, keepdims=True)\n    # on down-phase days (phase_gap > 0) wait on mediocre POIs, force-spend on top ones\n    return state.profit + 0.5 * rank * phase_gap - 0.1 * env.dist[state.current.astype(int)]"
+    },
+    {
+     "name": "llm-region-slope-rider",
+     "values": [
+      18.418751562053316,
+      18.54575529588299,
+      18.367922277709123,
+      18.408793093699877,
+      18.476145734034585,
+      18.370563620674503,
+      18.37606373554791,
+      18.25448318961791
+     ],
+     "gain": [
+      -0.07949226387698616,
+      -0.09678485935567238,
+      -0.10920730209733165,
+      -0.10920730209733165,
+      -0.10800727813466082,
+      -0.06756608071793124,
+      -0.1092073020973352,
+      -0.10451306957925155
+     ],
+     "accepted": false,
+     "source": "NAME = \"region-slope-rider\"\n\ndef score(env, state, region_mask):\n    # Target H4: regions drift linearly at different rates; add the predicted\n    # drift to profit so the greedy picker follows the trend, not just level.\n    M, n = state.profit.shape\n    t = float(np.asarray(state.t).reshape(-1)[0])\n    u = (t - 5.5) / 5.0\n    # region 0 full slope, others half (orthogonal to constant region bias)\n    w = np.where(region_mask.astype(int) == 0, 1.0, 0.5)\n    drift = 0.05 * u * w[None, :] * np.ones((M, n))\n    return state.profit + drift"
+    },
+    {
+     "name": "llm-weekly-phase-tilt",
+     "values": [
+      18.418751562053316,
+      18.54575529588299,
+      18.367922277709123,
+      18.408793093699877,
+      18.476145734034585,
+      18.370563620674503,
+      18.37606373554791,
+      18.25448318961791
+     ],
+     "gain": [
+      -0.07949226387698616,
+      -0.09678485935567238,
+      -0.10920730209733165,
+      -0.10920730209733165,
+      -0.10800727813466082,
+      -0.06756608071793124,
+      -0.1092073020973352,
+      -0.10451306957925155
+     ],
+     "accepted": false,
+     "source": "NAME = \"weekly-phase-tilt\"\n\ndef score(env, state, region_mask):\n    # Target H3: sinusoidal day-of-cycle drift; tilt profits by the phase\n    # estimate for today so dips/upswings are anticipated.\n    M, n = state.profit.shape\n    t = float(np.asarray(state.t).reshape(-1)[0])\n    ang = 2.0 * math.pi * t / 7.0\n    eff = 0.05 * math.sin(ang) + 0.05 * math.cos(ang)\n    return state.profit + eff * np.ones((M, n))"
+    },
+    {
+     "name": "llm-neighbour-pull",
+     "values": [
+      18.183889305422994,
+      18.16181985837234,
+      18.198342850797886,
+      18.185679051349535,
+      18.2481115934373,
+      18.13197419232523,
+      18.15294969319757,
+      18.012214096846336
+     ],
+     "gain": [
+      -0.31435452050730817,
+      -0.48072029686632334,
+      -0.27878672900856927,
+      -0.33232134444767425,
+      -0.33604141873194493,
+      -0.306155509067203,
+      -0.33232134444767425,
+      -0.34678216235082715
+     ],
+     "accepted": false,
+     "source": "NAME = \"neighbour-pull\"\n\ndef score(env, state, region_mask):\n    # Target H7: local mean reversion \u2014 score POIs by profit blended toward\n    # the kernel-weighted neighbour average, anticipating the pull.\n    M, n = state.profit.shape\n    d = np.asarray(env.dist, dtype=float)\n    K = np.exp(-d / 5.0)\n    row = K.sum(axis=1, keepdims=True)\n    Kn = K / np.maximum(row, 1e-12)\n    local = state.profit @ Kn.T\n    return state.profit + 0.5 * (local - state.profit)"
+    }
+   ],
+   "accepted": [],
+   "errors": [
+    "IndexError: invalid index to scalar variable.",
+    "IndexError: invalid index to scalar variable."
+   ]
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 4,
+   "cache_hits": 0,
+   "tokens_in": 6968,
+   "tokens_out": 4150
+  },
+  "build_seconds": 489.31101655960083
+ },
+ "rpp-random-n100-s0-CROWD": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "mix",
+   "mix_boot": 6,
+   "decision_sims": 60,
+   "decision_margin": 0.01,
+   "mix_disagree_round": true,
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 3,
+    "accepted": 15,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 79682.00077435482,
+      "pool": 8
+     },
+     {
+      "round": 1,
+      "best_ll_val": 79733.47030889743,
+      "pool": 13
+     },
+     {
+      "round": 2,
+      "best_ll_val": 79717.8718890658,
+      "pool": 18
+     }
+    ],
+    "usage": {
+     "calls": 3,
+     "cache_hits": 0,
+     "tokens_in": 5559,
+     "tokens_out": 6745
+    }
+   },
+   "n_llm": 15,
+   "n_dsl": 16,
+   "mix": {
+    "groups": [
+     {
+      "experts": 12,
+      "kept": 5,
+      "components": 1,
+      "val_ll": 80689.11,
+      "train_ll": 188801.05
+     }
+    ]
+   },
+   "mix_alternatives": {
+    "base_macro": [
+     "harvest",
+     0,
+     2
+    ],
+    "alternatives": 2,
+    "decision_changing": []
+   }
+  },
+  "hypotheses": [
+   [
+    "mix[K=5,gaussian]",
+    80689.08635340047,
+    0
+   ],
+   [
+    "gaussian",
+    76084.44155854256,
+    1
+   ],
+   [
+    "gaussian",
+    75453.87018927383,
+    2
+   ],
+   [
+    "gaussian",
+    73950.71210841712,
+    3
+   ],
+   [
+    "gaussian",
+    73171.15940333239,
+    4
+   ],
+   [
+    "gaussian",
+    72863.43857793513,
+    5
+   ],
+   [
+    "gaussian",
+    71541.55970754745,
+    6
+   ],
+   [
+    "llm:Drift",
+    71267.40175659281,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-cluster-burst",
+     "values": [
+      13.17866473459176,
+      13.474791312098137,
+      11.871833889687817,
+      12.936078642109905,
+      13.613841273415172,
+      10.730296158211573,
+      14.179712649601722,
+      14.22567003782325
+     ],
+     "gain": [
+      -2.5449329703550507,
+      -2.5408315245809945,
+      -1.2605603628171664,
+      -2.465944553729681,
+      -2.4169524132062428,
+      -2.046281355674685,
+      -2.4850891550251113,
+      -2.5515718580834204
+     ],
+     "accepted": false,
+     "source": "NAME = \"cluster-burst\"\n\ndef score(env, state, region_mask):\n    # Under spill-over (H0/H7), POIs near today's visits decay by ~amp.\n    # A profitable POI surrounded by other profitable POIs will be decayed\n    # as soon as the tour enters the cluster, so grab whole clusters now:\n    # value = own profit + kernel-weighted neighbourhood profit.\n    d = env.dist\n    pos = d[d > 0]\n    l = 0.25 * np.median(pos) if pos.size else 1.0\n    k = np.exp(-(d ** 2) / (2.0 * l * l))\n    np.fill_diagonal(k, 0.0)\n    nb = state.profit @ k                      # (M, n) neighbourhood mass\n    s = state.profit + 0.5 * nb\n    return np.where(region_mask[None, :], s, -1e9)"
+    },
+    {
+     "name": "llm-horizon-burst",
+     "values": [
+      14.059494003536907,
+      14.687343086736034,
+      12.089967042634246,
+      13.85525824942434,
+      14.532972944413569,
+      11.112842665415737,
+      15.1487289911835,
+      14.33189368559231
+     ],
+     "gain": [
+      -1.6641037014099034,
+      -1.328279749943098,
+      -1.0424272098707377,
+      -1.5467649464152462,
+      -1.4978207422078462,
+      -1.6637348484705203,
+      -1.5160728134433334,
+      -2.4453482103143607
+     ],
+     "accepted": false,
+     "source": "NAME = \"horizon-burst\"\n\ndef score(env, state, region_mask):\n    # Same capture-before-decay logic as cluster-burst, but the urgency of\n    # taking a cluster whole fades with the horizon: with few days left,\n    # spill decay has almost no time to hurt postponed neighbours, so the\n    # cluster premium is scaled by remaining schedule (t=1-based).\n    d = env.dist\n    pos = d[d > 0]\n    l = 0.2 * np.median(pos) if pos.size else 1.0\n    k = np.exp(-(d ** 2) / (2.0 * l * l))\n    np.fill_diagonal(k, 0.0)\n    nb = state.profit @ k\n    frac_left = max(0.0, 1.0 - (float(state.t) - 1.0) / max(1.0, float(env.T)))\n    s = state.profit + (0.9 * frac_left + 0.05) * nb\n    return np.where(region_mask[None, :], s, -1e9)"
+    },
+    {
+     "name": "llm-reach-harvest",
+     "values": [
+      14.114513832754769,
+      14.309468037299567,
+      11.660467071385211,
+      13.037876712072627,
+      13.993507346221076,
+      11.048371768436368,
+      14.920744760645881,
+      14.434695522956376
+     ],
+     "gain": [
+      -1.6090838721920413,
+      -1.706154799379565,
+      -1.4719271811197725,
+      -2.364146483766959,
+      -2.037286340400339,
+      -1.7282057454498894,
+      -1.744057043980952,
+      -2.3425463729502933
+     ],
+     "accepted": false,
+     "source": "NAME = \"reach-harvest\"\n\ndef score(env, state, region_mask):\n    # Every extra travel day is another round of spill decay on untouched\n    # clusters (H0/H7), and gaussian experts just reward fast collection.\n    # Rank by profit discounted by distance from the current position, so\n    # near-ties in profit are broken toward short hops; a light cluster term\n    # keeps the burst-together behaviour near hot regions.\n    d = env.dist\n    pos = d[d > 0]\n    L = np.median(pos) if pos.size else 1.0\n    dc = d[state.current, :]                   # (M,) distance from current\n    k = np.exp(-(d ** 2) / (2.0 * (0.2 * L) ** 2))\n    np.fill_diagonal(k, 0.0)\n    nb = state.profit @ k\n    s = (state.profit + 0.15 * nb) / (1.0 + dc / L)\n    return np.where(region_mask[None, :], s, -1e9)"
+    }
+   ],
+   "accepted": [],
+   "errors": [
+    "IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed",
+    "UnicodeEncodeError: 'charmap' codec can't encode character '\\u2248' in position 194: character maps to <undefined>",
+    "IndexError: too many indices for array: array is 2-dimensional, but 3 were indexed"
+   ]
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 5,
+   "cache_hits": 0,
+   "tokens_in": 7418,
+   "tokens_out": 11280
+  },
+  "build_seconds": 1010.0391359329224
+ }
+}

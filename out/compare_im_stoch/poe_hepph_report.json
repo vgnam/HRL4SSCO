@@ -1,0 +1,646 @@
+{
+ "im-hepph-n200-s0-SOFT2": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "poe",
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 3,
+    "accepted": 15,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": -2809.0917465074463,
+      "pool": 8
+     },
+     {
+      "round": 1,
+      "best_ll_val": -2648.5903744935513,
+      "pool": 13
+     },
+     {
+      "round": 2,
+      "best_ll_val": -2648.5903744935513,
+      "pool": 18
+     }
+    ],
+    "usage": {
+     "calls": 3,
+     "cache_hits": 0,
+     "tokens_in": 4877,
+     "tokens_out": 5017
+    }
+   },
+   "n_llm": 15,
+   "n_dsl": 11,
+   "poe": {
+    "groups": [
+     {
+      "key": [
+       0.0,
+       false
+      ],
+      "experts": 12,
+      "kept": 4,
+      "theta": [
+       0.573,
+       10.839,
+       0.299,
+       0.622
+      ],
+      "beta": 5.519,
+      "loglik": -5814.459771121435
+     },
+     {
+      "key": [
+       0.5,
+       false
+      ],
+      "experts": 2,
+      "kept": 1,
+      "theta": [
+       3.122
+      ],
+      "beta": 3.323,
+      "loglik": -7266.534414473265
+     },
+     {
+      "key": [
+       1.0,
+       false
+      ],
+      "experts": 3,
+      "kept": 3,
+      "theta": [
+       3.362,
+       1.791,
+       0.396
+      ],
+      "beta": 6.645,
+      "loglik": -10891.181904591016
+     }
+    ]
+   }
+  },
+  "hypotheses": [
+   [
+    "poe[4]",
+    -2546.995722712782,
+    0
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 1
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-chain-2",
+     "values": [
+      81.5
+     ],
+     "gain": [
+      -2.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"chain-2\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Two-hop expected gain: the seed pushes its out-neighbours now, and the ones\n    # that fire carry a +1 to *their* out-neighbours next round. Under the\n    # zero-baseline expert every pushed node fires w.p. ~0.5, so the second hop\n    # (which plain hub ignores) dominates the choice of seed.\n    P0, P1, P2 = prob(f.a), prob(f.a + 1), prob(f.a + 2)\n    q1 = np.where(f.eligible, P1 - P0, 0.0)      # fires this round if pushed once\n    q2 = np.where(f.eligible, P2 - P1, 0.0)      # marginal value of the next push\n    hop1 = q1 @ graph.adjT                       # exp. activations caused this round\n    carry = q1 * (q2 @ graph.adjT)               # value a fired node delivers next round\n    hop2 = carry @ graph.adjT                    # exp. second-round activations per seed\n    return hop1 + hop2 + f.eligible * (1.0 - P0)"
+    },
+    {
+     "name": "llm-surge-2",
+     "values": [
+      84.5
+     ],
+     "gain": [
+      0.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"surge-2\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Hub ignores *where* on the response curve the target sits. Up-weight\n    # targets that are already near their tipping point (large P0 AND large\n    # marginal), so picks concentrate on nodes one push away from firing\n    # (a == 2 under H0) instead of spreading thinly over cold hubs.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    q = np.where(f.eligible, P1 - P0, 0.0)\n    w = q * (1.0 + P0)                # momentum bias toward near-threshold targets\n    return w @ graph.adjT + f.eligible * (1.0 - P0)"
+    },
+    {
+     "name": "llm-gate-plus",
+     "values": [
+      83.5
+     ],
+     "gain": [
+      -0.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"gate-plus\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # gate-2 only completes a == 1 gates. Under H0 the biggest jump is\n    # a == 2 -> 3 (p: 0.27 -> 0.73), larger than the 1 -> 2 jump, and no\n    # built-in operator targets it. Complete both gate levels, keep the\n    # progress and tie terms of gate-2, plus a small hub fallback.\n    P0, P1, P2 = prob(f.a), prob(f.a + 1), prob(f.a + 2)\n    q1 = np.where(f.eligible, P1 - P0, 0.0)\n    q2 = np.where(f.eligible, P2 - P1, 0.0)\n    comp1 = q1 * (f.a == 1)                       # complete a 1-gate\n    comp2 = q2 * (f.a == 2)                       # complete a 2-gate (biggest jump)\n    prog = 0.3 * (f.eligible & (f.a < 1))\n    w = comp1 + comp2 + prog + 0.1 * q1           # fallback when no gates remain\n    return w @ graph.adjT + 1e-3 * f.eligible"
+    },
+    {
+     "name": "llm-blend-hub-gate",
+     "values": [
+      87.0
+     ],
+     "gain": [
+      3.0
+     ],
+     "accepted": true,
+     "source": "NAME = \"blend-hub-gate\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Mix of hub's spread-aware scoring and gate-2's gate-completion scoring.\n    # hub alone over-values far-from-gate targets; gate-2 ignores the seed's own\n    # activation and the magnitude of each target's marginal. A 50/50 blend\n    # keeps gate-2's targeting but re-adds the self term and reach tie-break.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    comp = (f.eligible & (f.a == 1)).astype(float)\n    prog = (f.eligible & (f.a < 1)).astype(float)\n    g = comp + 0.3 * prog\n    hub_part = D @ graph.adjT + f.eligible * (1.0 - P0)\n    gate_part = g @ graph.adjT\n    return 0.5 * hub_part + 0.5 * gate_part + 1e-3 * f.eligible"
+    },
+    {
+     "name": "llm-two-step-hub",
+     "values": [
+      58.0
+     ],
+     "gain": [
+      -29.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"two-step-hub\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # hub values one round of spread; it undervalues seeds whose targets, once\n    # activated THIS round, will themselves be one step from the gate next round.\n    # Add a second-order term: each target v that gets +1 now has value\n    # p(a_v+1) * (marginal its out-neighbours gain from a further +1 next round).\n    P0, P1, P2 = prob(f.a), prob(f.a + 1), prob(f.a + 2)\n    D1 = np.where(f.eligible, P1 - P0, 0.0)\n    D2 = P2 - P1                                   # marginal of a second activation\n    future = P1 * (D2 @ graph.adjT)                # next-round spread value of v if activated now\n    return (D1 @ graph.adjT\n            + f.eligible * (1.0 - P0)\n            + 0.8 * (future @ graph.adjT)\n            + 1e-3 * f.eligible)"
+    },
+    {
+     "name": "llm-near-gate",
+     "values": [
+      84.5
+     ],
+     "gain": [
+      -2.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"near-gate\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Same spread structure as hub, but each target's marginal is squared so the\n    # score concentrates on nodes already closest to their activation gate.\n    # Under a soft-threshold law the marginal (P1-P0) is tiny for a<=1 and large\n    # at a==2; hub's linear spread wastes picks on low-marginal targets, while\n    # squaring makes every seed push a near-gate node over the top, which also\n    # yields the largest self-activation jump next round via the chain effect.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    focus = D * D\n    return focus @ graph.adjT + f.eligible * (1.0 - P0) + 1e-3 * f.eligible"
+    }
+   ],
+   "accepted": [
+    "llm-blend-hub-gate"
+   ],
+   "errors": []
+  },
+  "library": [
+   "hub",
+   "prime",
+   "wait",
+   "gate-2",
+   "gate-3",
+   "hedge-2",
+   "hedge-3",
+   "llm-blend-hub-gate"
+  ],
+  "llm_usage": {
+   "calls": 5,
+   "cache_hits": 0,
+   "tokens_in": 7957,
+   "tokens_out": 16232
+  },
+  "build_seconds": 537.5917701721191
+ },
+ "im-hepph-n200-s0-HET": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "poe",
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 2,
+    "accepted": 10,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": -4102.339356529227,
+      "pool": 8
+     },
+     {
+      "round": 1,
+      "best_ll_val": -4102.339356529227,
+      "pool": 13
+     }
+    ],
+    "usage": {
+     "calls": 2,
+     "cache_hits": 0,
+     "tokens_in": 2991,
+     "tokens_out": 3464
+    }
+   },
+   "n_llm": 10,
+   "n_dsl": 11,
+   "poe": {
+    "groups": [
+     {
+      "key": [
+       0.0,
+       false
+      ],
+      "experts": 12,
+      "kept": 2,
+      "theta": [
+       0.966,
+       0.084
+      ],
+      "beta": 0.405,
+      "loglik": -8754.43732531309
+     },
+     {
+      "key": [
+       1.0,
+       false
+      ],
+      "experts": 3,
+      "kept": 3,
+      "theta": [
+       2.183,
+       0.494,
+       0.494
+      ],
+      "beta": 5.201,
+      "loglik": -11651.954964154627
+     }
+    ]
+   }
+  },
+  "hypotheses": [
+   [
+    "poe[2]",
+    -3742.9387282047796,
+    0
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 1
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-cascade-2",
+     "values": [
+      89.0
+     ],
+     "gain": [
+      4.0
+     ],
+     "accepted": true,
+     "source": "NAME = \"cascade-2\"   # hub + one extra round of cascade value\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # f: Features of the current partial seed set (seeds already chosen this round count as active):\n    #    f.a (M, n) active in-neighbours, f.E (M, n) exposure, f.eligible (M, n) bool\n    #    (inactive and not chosen), f.indeg (n,), f.community (n,)\n    # state.status (M, n) in {0 inactive, 1 active, 2 removed}; region_mask (n,) bool;\n    # chosen (M, n) bool seeds already picked this round.\n    # graph.adj: scipy CSR (n, n) with adj[u, v] = 1 for an edge u -> v; graph.adjT its transpose,\n    #    so X @ graph.adjT sums a per-target quantity X (M, n) over each node's out-neighbours.\n    # prob(a): (M, n) activation probability of every node under the hypothesis being planned\n    #    for, if it had `a` active in-neighbours (prob(f.a) now, prob(f.a + 1) with one more).\n    #    Use it instead of hard-coding law parameters: the planner calls the operator under\n    #    every hypothesis.\n    # Return the (M, n) gain of adding each node as the next seed (higher = better).\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)      # round-1 marginal activation per target\n    C1 = D @ graph.adjT                          # hub's immediate spread term\n    # A seed u pushes +1 into each out-neighbour v; if v activates (prob P1_v), v becomes an\n    # active driver next round and adds D_w to each of its own out-neighbours w.\n    P1e = P1 * f.eligible                        # only fresh activations spread again\n    C2 = (P1e * C1) @ graph.adjT                 # round-2 cascade value of seeding u\n    return C1 + 0.5 * C2 + f.eligible * (1.0 - P0)"
+    },
+    {
+     "name": "llm-cascade-3",
+     "values": [
+      88.0
+     ],
+     "gain": [
+      -1.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"cascade-3\"   # deeper lookahead: three rounds of cascade value\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # f: Features of the current partial seed set (seeds already chosen this round count as active):\n    #    f.a (M, n) active in-neighbours, f.E (M, n) exposure, f.eligible (M, n) bool\n    #    (inactive and not chosen), f.indeg (n,), f.community (n,)\n    # state.status (M, n) in {0 inactive, 1 active, 2 removed}; region_mask (n,) bool;\n    # chosen (M, n) bool seeds already picked this round.\n    # graph.adj: scipy CSR (n, n) with adj[u, v] = 1 for an edge u -> v; graph.adjT its transpose,\n    #    so X @ graph.adjT sums a per-target quantity X (M, n) over each node's out-neighbours.\n    # prob(a): (M, n) activation probability of every node under the hypothesis being planned\n    #    for, if it had `a` active in-neighbours (prob(f.a) now, prob(f.a + 1) with one more).\n    #    Use it instead of hard-coding law parameters: the planner calls the operator under\n    #    every hypothesis.\n    # Return the (M, n) gain of adding each node as the next seed (higher = better).\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    C1 = D @ graph.adjT                          # round-1 reward contribution\n    P1e = P1 * f.eligible\n    C2 = (P1e * C1) @ graph.adjT                 # value via drivers activated in round 1\n    C3 = (P1e * C2) @ graph.adjT                 # value via drivers activated in round 2\n    return C1 + 0.6 * C2 + 0.36 * C3 + f.eligible * (1.0 - P0)"
+    },
+    {
+     "name": "llm-gate-setup",
+     "values": [
+      86.0
+     ],
+     "gain": [
+      -3.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"gate-setup\"   # hub + cascade, plus bonus for pushing nodes one below a gate threshold\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # f: Features of the current partial seed set (seeds already chosen this round count as active):\n    #    f.a (M, n) active in-neighbours, f.E (M, n) exposure, f.eligible (M, n) bool\n    #    (inactive and not chosen), f.indeg (n,), f.community (n,)\n    # state.status (M, n) in {0 inactive, 1 active, 2 removed}; region_mask (n,) bool;\n    # chosen (M, n) bool seeds already picked this round.\n    # graph.adj: scipy CSR (n, n) with adj[u, v] = 1 for an edge u -> v; graph.adjT its transpose,\n    #    so X @ graph.adjT sums a per-target quantity X (M, n) over each node's out-neighbours.\n    # prob(a): (M, n) activation probability of every node under the hypothesis being planned\n    #    for, if it had `a` active in-neighbours (prob(f.a) now, prob(f.a + 1) with one more).\n    #    Use it instead of hard-coding law parameters: the planner calls the operator under\n    #    every hypothesis.\n    # Return the (M, n) gain of adding each node as the next seed (higher = better).\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    P2 = prob(f.a + 2)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    D2 = np.where(f.eligible, P2 - P1, 0.0)      # marginal that appears after ONE more push\n    C1 = D @ graph.adjT\n    P1e = P1 * f.eligible\n    C2 = (P1e * C1) @ graph.adjT\n    # Steepness gain: a candidate v whose curve is flat NOW but steep after one more in-neighbour\n    # (gate law: a == g-2) is worth pushing toward the threshold even though D_v ~ 0.\n    # Detected purely from prob: slope grows sharply from a to a+1.\n    setup = np.where(f.eligible, np.maximum(D2 - D, 0.0), 0.0)\n    return C1 + 0.5 * C2 + 0.3 * (setup @ graph.adjT) + 1e-3 * f.eligible + f.eligible * (1.0 - P0)"
+    },
+    {
+     "name": "llm-cascade-mix",
+     "values": [
+      80.5
+     ],
+     "gain": [
+      -8.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"cascade-mix\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    base = D @ graph.adjT + f.eligible * (1.0 - P0)      # one-round hub gain\n    # extra credit for targets that are already part-activated: pushing them over\n    # the threshold now also unlocks their own out-reach sooner (cascade accel)\n    accel = np.where(f.eligible & (f.a >= 1), P1 - P0, 0.0) @ graph.adjT\n    out = base + 0.8 * accel\n    return np.where(f.eligible, out, -1e6)"
+    },
+    {
+     "name": "llm-two-step-cascade",
+     "values": [
+      78.5
+     ],
+     "gain": [
+      -10.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"two-step-cascade\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    hop1 = D @ graph.adjT + f.eligible * (1.0 - P0)      # this round's reward\n    # if the seed itself activates (prob P1), its out-neighbours get another\n    # chance next round: the seed's contribution repeats with prob(f.a+1)\n    seed_p = np.where(f.eligible, P1, 0.0)\n    hop2 = seed_p * (D @ graph.adjT)\n    out = hop1 + 0.85 * hop2\n    return np.where(f.eligible, out, -1e6)"
+    },
+    {
+     "name": "llm-hub-gate-soft",
+     "values": [
+      69.0
+     ],
+     "gain": [
+      -20.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"hub-gate-soft\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0 = prob(f.a)\n    P1 = prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    hub_score = D @ graph.adjT + f.eligible * (1.0 - P0)\n    # gate push: complete nearly-open gates strongly, advance progress softly,\n    # but weight each push by how much it really moves prob (law-agnostic)\n    comp = f.eligible & (f.a == 1)\n    prog = f.eligible & (f.a < 1)\n    push = prob(f.a + 1) - prob(f.a)                     # true per-edge impact\n    g = ((comp.astype(float) + 0.35 * prog.astype(float)) * push) @ graph.adjT\n    out = hub_score + 0.7 * g + 1e-3 * f.eligible\n    return np.where(f.eligible, out, -1e6)"
+    }
+   ],
+   "accepted": [
+    "llm-cascade-2"
+   ],
+   "errors": []
+  },
+  "library": [
+   "hub",
+   "prime",
+   "wait",
+   "gate-2",
+   "gate-3",
+   "hedge-2",
+   "hedge-3",
+   "llm-cascade-2"
+  ],
+  "llm_usage": {
+   "calls": 4,
+   "cache_hits": 0,
+   "tokens_in": 5162,
+   "tokens_out": 14494
+  },
+  "build_seconds": 568.7486295700073
+ },
+ "im-hepph-n200-s0-FATIGUE": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "poe",
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 2,
+    "accepted": 10,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": -2979.397026281709,
+      "pool": 8
+     },
+     {
+      "round": 1,
+      "best_ll_val": -2979.397026281709,
+      "pool": 13
+     }
+    ],
+    "usage": {
+     "calls": 2,
+     "cache_hits": 0,
+     "tokens_in": 2921,
+     "tokens_out": 4905
+    }
+   },
+   "n_llm": 10,
+   "n_dsl": 11,
+   "poe": {
+    "groups": [
+     {
+      "key": [
+       0.0,
+       false
+      ],
+      "experts": 12,
+      "kept": 4,
+      "theta": [
+       1.555,
+       0.061,
+       0.25,
+       0.249
+      ],
+      "beta": 0.728,
+      "loglik": -6413.276459974813
+     },
+     {
+      "key": [
+       0.5,
+       false
+      ],
+      "experts": 2,
+      "kept": 2,
+      "theta": [
+       0.718,
+       0.393
+      ],
+      "beta": -2.464,
+      "loglik": -7212.822129640559
+     },
+     {
+      "key": [
+       2.0,
+       false
+      ],
+      "experts": 2,
+      "kept": 2,
+      "theta": [
+       0.0,
+       0.0
+      ],
+      "beta": -4.517,
+      "loglik": -15187.023818714944
+     }
+    ]
+   }
+  },
+  "hypotheses": [
+   [
+    "poe[4]",
+    -2782.556350187553,
+    0
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 1
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-cascade-2",
+     "values": [
+      45.0
+     ],
+     "gain": [
+      -14.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"cascade-2\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # Hub only counts the one-round reward, but newly activated nodes are the\n    # active in-neighbours of the *next* round. Under a shallow contagion law\n    # (e.g. the marginal-contagion expert: small s, midpoint at a=1) no single\n    # seed fires anything reliably this round -- value comes from chains, which\n    # hub is blind to. Score = hub's one-round gain + discounted expected\n    # second-round cascade seeded by this round's new activations.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    one = D @ graph.adjT + f.eligible * (1.0 - P0)\n    second = (D @ graph.adjT) @ graph.adjT   # expected spread of round t+1 activations\n    return one + 0.5 * second"
+    },
+    {
+     "name": "llm-frac-tip",
+     "values": [
+      62.0
+     ],
+     "gain": [
+      3.0
+     ],
+     "accepted": true,
+     "source": "NAME = \"frac-tip\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # For the degree-normalisation expert, what matters is the *fraction*\n    # a/indeg, not the raw count: a seed landing on a low-indeg node moves the\n    # fraction a lot, while hub weights all targets equally. Rescale each\n    # target's marginal by 1/indeg (normalised push), and bonus targets that a\n    # single seed tips to a/indeg = 1 (the top of the curve for that law).\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    inv = 1.0 / np.maximum(f.indeg, 1.0)\n    tip = f.eligible & (f.indeg > 0) & ((f.a + 1.0) >= f.indeg)\n    w = D * (1.0 + inv) + 0.5 * tip.astype(float)\n    return w @ graph.adjT + f.eligible * (1.0 - P0)"
+    },
+    {
+     "name": "llm-soft-gate",
+     "values": [
+      59.5
+     ],
+     "gain": [
+      -2.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"soft-gate\"\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    # gate-2 / gate-3 hard-code a threshold g; if the hidden law's midpoint is\n    # elsewhere (or the sigmoid is shallow), they mostly score 0 and the greedy\n    # falls back to the tiny constant term. Instead, rank targets by how much\n    # one extra active in-neighbour moves their probability *right now* --\n    # the squared marginal peaks exactly at the sigmoid's steepest point for\n    # whatever law prob() encodes, so the gate adapts itself.\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    steep = 4.0 * D * D            # in [0,1], max at the law's midpoint\n    return steep @ graph.adjT + 1e-3 * f.eligible"
+    },
+    {
+     "name": "llm-deep-2",
+     "values": [
+      60.5
+     ],
+     "gain": [
+      -1.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"deep-2\"   # hub + discounted second-order spread\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)      # marginal activation of each target\n    own = f.eligible * (1.0 - P0)               # the seed itself\n    first = D @ graph.adjT                      # immediate spread (hub part)\n    # second order: a target u that activates this round (prob ~ P1_u) carries value V_u\n    # (its own spread + self) into the NEXT round, hitting u's out-neighbours.\n    V = first + own\n    second = (D * P1 * V) @ graph.adjT\n    return first + 0.5 * second + 1e-3 * own"
+    },
+    {
+     "name": "llm-tippers",
+     "values": [
+      62.5
+     ],
+     "gain": [
+      0.5
+     ],
+     "accepted": false,
+     "source": "NAME = \"tippers\"   # weight marginal gain by how cheap a target is to tip (low indeg)\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    # low-indeg targets respond more per extra active in-neighbour (laws 0 and 2);\n    # up-weight them so greedy prefers seeds that finish off near-tipped nodes\n    w = 1.0 + 1.0 / np.maximum(f.indeg, 1.0)            # (n,)\n    tipped = (f.eligible & (f.a + 1 >= np.maximum(f.indeg, 1))).astype(float)\n    score = (D * w[None, :]) @ graph.adjT               # indeg-weighted spread\n    score = score + 0.5 * tipped @ graph.adjT           # sure-thing targets spread for free\n    return score + 1e-3 * f.eligible * (1.0 - P0)"
+    },
+    {
+     "name": "llm-primer-3",
+     "values": [
+      55.0
+     ],
+     "gain": [
+      -7.0
+     ],
+     "accepted": false,
+     "source": "NAME = \"primer-3\"   # value priming: first in-neighbour may be worthless, second tips\n\ndef objective(f, state, region_mask, chosen, graph, prob):\n    P0, P1 = prob(f.a), prob(f.a + 1)\n    D = np.where(f.eligible, P1 - P0, 0.0)\n    # targets whose marginal is currently ~0 (e.g. a=0 under a contagion law with\n    # p(1)=p(0)) are not worthless: pushing them to a=1 makes ANY later in-neighbour\n    # a tipping one. Count that setup value, but only for truly flat targets.\n    flat = f.eligible & ((P1 - P0) <= 1e-9) & (P1 < 0.99)\n    prime = flat.astype(float)\n    return (D + 0.35 * prime) @ graph.adjT + 1e-3 * f.eligible * (1.0 - P0)"
+    }
+   ],
+   "accepted": [
+    "llm-frac-tip"
+   ],
+   "errors": []
+  },
+  "library": [
+   "hub",
+   "prime",
+   "wait",
+   "gate-2",
+   "gate-3",
+   "hedge-2",
+   "hedge-3",
+   "llm-frac-tip"
+  ],
+  "llm_usage": {
+   "calls": 4,
+   "cache_hits": 0,
+   "tokens_in": 5942,
+   "tokens_out": 12717
+  },
+  "build_seconds": 552.141252040863
+ }
+}

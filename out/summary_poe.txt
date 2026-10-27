@@ -1,0 +1,48 @@
+=== IM stochastic
+dataset     law  oracle  strata-true   dsl   llm   poe  ws best  poe-llm    p  poe-dsl  p_d  poe-ws  p_w
+   dblp FATIGUE    85.6         85.0  83.1  87.9  84.6     89.1     -3.3 0.42      1.5 0.56    -4.5 0.11
+   dblp     HET    99.9        100.5  92.8  88.6  87.8     89.7     -0.8 0.83     -5.0 0.18    -1.9 0.54
+   dblp   SOFT2   100.8        106.2  90.2 106.4 104.9     81.9     -1.5 0.27     14.7 0.00    23.0 0.00
+  hepph FATIGUE    80.5         79.9  72.2  81.3  78.3     77.1     -3.0 0.19      6.1 0.09     1.2 0.66
+  hepph     HET   101.8        105.4  94.3  88.5  95.8     94.5      7.3 0.02      1.5 0.53     1.3 0.56
+  hepph   SOFT2    90.9         90.9  75.1  90.9  90.9     81.0      0.0  NaN     15.8 0.00     9.9 0.00
+   wiki FATIGUE    70.5         70.5  54.0  66.7  68.4     70.6      1.7 0.07     14.4 0.00    -2.2 0.01
+   wiki     HET   121.0        118.4 121.0 119.4 116.5    111.0     -2.9 0.24     -4.5 0.08     5.5 0.10
+   wiki   SOFT2   152.6        157.0 152.6 156.9 157.0    148.1      0.1 0.34      4.4 0.00     8.9 0.00
+  im-dblp-n200-s0-SOFT2 | hyps: ['poe[4]'] | poe groups: [(12, 4), (3, 1)] | calls 4 | build 407s
+  im-dblp-n200-s0-HET | hyps: ['poe[5]'] | poe groups: [(12, 5), (2, 2)] | calls 4 | build 401s
+  im-dblp-n200-s0-FATIGUE | hyps: ['poe[2]'] | poe groups: [(12, 2), (4, 4)] | calls 4 | build 779s
+  im-hepph-n200-s0-SOFT2 | hyps: ['poe[4]'] | poe groups: [(12, 4), (2, 1), (3, 3)] | calls 5 | build 538s
+  im-hepph-n200-s0-HET | hyps: ['poe[2]'] | poe groups: [(12, 2), (3, 3)] | calls 4 | build 569s
+  im-hepph-n200-s0-FATIGUE | hyps: ['poe[4]'] | poe groups: [(12, 4), (2, 2), (2, 2)] | calls 4 | build 552s
+  im-wiki-n200-s0-SOFT2 | hyps: ['poe[4]'] | poe groups: [(12, 4), (3, 2), (2, 2)] | calls 5 | build 502s
+  im-wiki-n200-s0-HET | hyps: ['poe[5]'] | poe groups: [(12, 5), (3, 2)] | calls 6 | build 1116s
+  im-wiki-n200-s0-FATIGUE | hyps: ['poe[3]'] | poe groups: [(12, 3), (8, 2)] | calls 4 | build 354s
+
+=== RPP
+       dataset   law  oracle  strata-true   dsl   llm   poe  ws best  poe-llm    p  poe-dsl  p_d  poe-ws  p_w
+   flickr-Melb CROWD    9.94        10.03 10.03 10.19  9.82     8.06    -0.37 0.00    -0.20 0.06    1.76  0.0
+   flickr-Melb   IID   18.32        18.28 18.34 18.31 18.32    14.79     0.01 0.18    -0.02 0.20    3.53  0.0
+   flickr-Melb SPILL   17.65        18.62 18.62 18.62 18.62    14.57     0.00  NaN     0.00  NaN    4.05  0.0
+   flickr-Melb TREND   22.16        22.30 22.33 22.33 22.33    16.80     0.00  NaN     0.00  NaN    5.53  0.0
+foursquare-NYC CROWD   11.79        12.60 11.81 12.39 11.81     8.23    -0.58 0.00     0.00  NaN    3.57  0.0
+foursquare-NYC   IID   14.02        14.02 14.11 14.00 14.11    10.84     0.11 0.09     0.00  NaN    3.26  0.0
+foursquare-NYC SPILL   13.89        14.03 14.05 14.05 14.05    10.96     0.00  NaN     0.00  NaN    3.09  0.0
+foursquare-NYC TREND   14.46        14.54 14.51 14.51 14.51    11.04     0.00  NaN     0.00  NaN    3.47  0.0
+        random CROWD   15.50        16.71 16.15 16.15 16.50    11.13     0.36 0.04     0.36 0.04    5.37  0.0
+        random   IID   18.48        18.47 18.36 18.34 18.45    13.94     0.11 0.19     0.09 0.29    4.51  0.0
+        random SPILL   18.61        18.60 18.59 18.59 18.59    13.47     0.00  NaN     0.00  NaN    5.12  0.0
+        random TREND   18.98        19.07 19.14 19.20 19.14    13.88    -0.06 0.05     0.00  NaN    5.26  0.0
+  rpp-flickr-Melb-n88-s0-IID | hyps: ['llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift', 'llm:Drift'] | poe groups: [(12, 12)] | calls 6 | build 983s
+  rpp-flickr-Melb-n88-s0-TREND | hyps: ['uniform', 'uniform', 'gaussian', 'llm:Drift', 'poe[2]'] | poe groups: [(12, 2)] | calls 5 | build 827s
+  rpp-flickr-Melb-n88-s0-SPILL | hyps: ['uniform', 'gaussian', 'uniform', 'mixture', 'gaussian'] | poe groups: [(10, 5)] | calls 4 | build 512s
+  rpp-flickr-Melb-n88-s0-CROWD | hyps: ['gaussian', 'gaussian', 'gaussian', 'poe[3]', 'uniform'] | poe groups: [(12, 3)] | calls 5 | build 513s
+  rpp-foursquare-NYC-n100-s0-IID | hyps: ['uniform', 'uniform', 'uniform', 'uniform', 'uniform'] | poe groups: [(10, 10)] | calls 4 | build 409s
+  rpp-foursquare-NYC-n100-s0-TREND | hyps: ['uniform', 'uniform', 'uniform', 'llm:Drift', 'llm:Drift'] | poe groups: [(12, 1)] | calls 6 | build 452s
+  rpp-foursquare-NYC-n100-s0-SPILL | hyps: ['uniform', 'uniform', 'uniform', 'uniform', 'uniform'] | poe groups: [(12, 4)] | calls 5 | build 556s
+  rpp-foursquare-NYC-n100-s0-CROWD | hyps: ['gaussian', 'gaussian', 'poe[3]', 'llm:Drift', 'llm:Drift'] | poe groups: [(12, 3)] | calls 6 | build 1230s
+  rpp-random-n100-s0-IID | hyps: ['llm:Drift', 'llm:Drift', 'uniform', 'uniform', 'uniform'] | poe groups: [(12, 12)] | calls 7 | build 410s
+  rpp-random-n100-s0-TREND | hyps: ['uniform', 'uniform', 'uniform', 'uniform', 'uniform'] | poe groups: [(12, 2)] | calls 5 | build 635s
+  rpp-random-n100-s0-SPILL | hyps: ['uniform', 'uniform', 'uniform', 'uniform', 'uniform'] | poe groups: [(12, 2)] | calls 5 | build 633s
+  rpp-random-n100-s0-CROWD | hyps: ['poe[5]', 'llm:Drift', 'llm:Drift', 'gaussian', 'llm:Drift'] | poe groups: [(12, 5)] | calls 7 | build 1170s
+

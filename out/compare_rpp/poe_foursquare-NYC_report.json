@@ -1,0 +1,1223 @@
+{
+ "rpp-foursquare-NYC-n100-s0-IID": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "poe",
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 2,
+    "accepted": 10,
+    "rejected": 0,
+    "errors": [],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 121621.88847179919,
+      "pool": 8
+     },
+     {
+      "round": 1,
+      "best_ll_val": 121621.88847179919,
+      "pool": 13
+     }
+    ],
+    "usage": {
+     "calls": 2,
+     "cache_hits": 0,
+     "tokens_in": 3382,
+     "tokens_out": 2051
+    }
+   },
+   "n_llm": 10,
+   "n_dsl": 16,
+   "poe": {
+    "groups": [
+     {
+      "experts": 10,
+      "kept": 10,
+      "theta": [
+       0.1,
+       0.1,
+       0.1,
+       0.1,
+       0.1,
+       0.1,
+       0.1,
+       0.1,
+       0.1,
+       0.1
+      ],
+      "loglik": 261992.34796397094
+     }
+    ]
+   }
+  },
+  "hypotheses": [
+   [
+    "uniform",
+    121621.88847179919,
+    0
+   ],
+   [
+    "uniform",
+    121621.39369937795,
+    1
+   ],
+   [
+    "uniform",
+    121620.32032951449,
+    2
+   ],
+   [
+    "uniform",
+    121619.27510361634,
+    3
+   ],
+   [
+    "uniform",
+    121572.99866814217,
+    4
+   ],
+   [
+    "uniform",
+    121526.76718428714,
+    5
+   ],
+   [
+    "mixture",
+    116206.82963744292,
+    6
+   ],
+   [
+    "llm:Drift",
+    112260.75104440068,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-reversion-tilt",
+     "values": [
+      13.92799401436286,
+      13.923721254044473,
+      13.928811541540698,
+      13.899091635351837,
+      13.929345263604041,
+      13.933980398862587,
+      13.821451381550595,
+      13.48211686043129
+     ],
+     "gain": [
+      -0.2603625324922909,
+      -0.26173310550322526,
+      -0.25721764919522094,
+      -0.25846811950603055,
+      -0.25186440518719877,
+      -0.23396041672744872,
+      0.1127579800402998,
+      -0.46082654514953525
+     ],
+     "accepted": false,
+     "source": "NAME = \"reversion-tilt\"\n\n# H7-style law: next-day drift is k*(initial - profit) (+ small noise).\n# Nodes ABOVE their initial level are decaying -> visiting them now costs nothing\n# later, so their priority gets an additive urgency bonus scaled by remaining days.\n# Nodes BELOW initial are still \"climbing\" -> visiting them now burns a slot that\n# would be worth more later, so they get a time-weighted penalty.\n# harvest (pure profit) ignores both effects; this repairs the ordering under H7.\n\nK = 0.15      # plausible reversion strength (bounds allow it)\nUP_W = 1.5\nDOWN_W = 0.6\n\ndef score(env, state, region_mask):\n    gap = state.profit - env.initial_profit[None, :]\n    days_left = max(float(env.T - state.t), 1.0)\n    # urgency to harvest decaying (above-initial) nodes; saturates so late-game\n    # doesn't blow up the ranking\n    urg = np.maximum(gap, 0.0) * (1.0 + 0.5 * np.minimum(days_left, 5.0) / 5.0)\n    # penalty for visiting still-rising (below-initial) nodes early:\n    # proportional to how much they are expected to gain if left alone\n    hor = np.minimum(1.0, days_left / max(float(env.T), 1.0))\n    wait = np.maximum(-gap, 0.0) * hor\n    return state.profit + UP_W * urg - DOWN_W * wait"
+    },
+    {
+     "name": "llm-drift-hazard",
+     "values": [
+      13.991348206956308,
+      13.987813705588657,
+      13.990740142557922,
+      13.961538145441585,
+      13.987869458049037,
+      13.977814717273361,
+      13.99547715759127,
+      13.377123056377705
+     ],
+     "gain": [
+      -0.1970083398988418,
+      -0.1976406539590414,
+      -0.19528904817799742,
+      -0.19602160941628277,
+      -0.1933402107422033,
+      -0.19012609831667504,
+      0.2867837560809754,
+      -0.5658203492031202
+     ],
+     "accepted": false,
+     "source": "NAME = \"drift-hazard\"\n\n# One-step hazard under the mean-reverting law: mean_next = profit + k*(initial-profit),\n# noise s. A node whose profit sits above the level it will regress to has a real\n# chance of being worth much less tomorrow; a node below it will likely be worth\n# MORE tomorrow, so visiting it now is a bad trade.\n# Instead of an additive tilt, we discount each node multiplicatively by the\n# probability it does NOT regress, with kernel width ~ s: nodes one step from\n# crossing their initial level get a smooth partial discount (the \"prob\"-style\n# spread/activation trade), while far-below nodes are heavily deferred.\n\nK = 0.15\nS = 0.0288\n\ndef score(env, state, region_mask):\n    gap = state.profit - env.initial_profit[None, :]\n    # expected one-day regression drop = k*gap; risk it materialises\n    z = 1.702 * (K * gap) / S          # logistic approx of Phi(drop/s)\n    keep = 1.0 / (1.0 + np.exp(-z))    # P(node holds its value tomorrow)\n    return 0.35 * state.profit + 0.65 * state.profit * keep"
+    },
+    {
+     "name": "llm-quick-reach",
+     "values": [
+      13.106026509267814,
+      13.10337075469449,
+      13.11214531501399,
+      13.081493192723762,
+      13.086518602686585,
+      13.14075635431067,
+      13.251968894269503,
+      13.046012728645309
+     ],
+     "gain": [
+      -1.0823300375873366,
+      -1.0820836048532083,
+      -1.0738838757219291,
+      -1.0760665621341055,
+      -1.0946910661046552,
+      -1.0271844612793668,
+      -0.45672450724079283,
+      -0.8969306769355168
+     ],
+     "accepted": false,
+     "source": "NAME = \"quick-reach\"\n\n# Both harvest and sweep rank by raw profit and let the router eat arbitrary\n# travel cost. With drifting/fading profits, time in transit is value destroyed:\n# a far, slightly richer node yields less once reached than a near node visited\n# now, and low transit time leaves more slots for other visits. Value = profit\n# per unit of approach cost, plus a mild tilt toward above-initial nodes so it\n# also exploits mean reversion (targets H6/H7 where baseline values sag).\n\ndef score(env, state, region_mask):\n    d = env.dist[state.current]           # (M, n) distance from current to each POI\n    scale = env.dist[env.dist > 0].mean() # typical hop length\n    gap = state.profit - env.initial_profit[None, :]\n    return state.profit / (1.0 + d / scale) + 0.3 * np.maximum(gap, 0.0)"
+    },
+    {
+     "name": "llm-reversion-spot",
+     "values": [
+      14.059838133258802,
+      14.05695368369015,
+      14.058462092580745,
+      14.029601975512154,
+      14.064745961852383,
+      14.093494762908158,
+      13.952467306356363,
+      13.888140855955658
+     ],
+     "gain": [
+      -0.12851841359634797,
+      -0.12850067585754843,
+      -0.12756709815517375,
+      -0.12795777934571362,
+      -0.11646370693885721,
+      -0.07444605268187843,
+      0.24377390484606742,
+      -0.054802549625167174
+     ],
+     "accepted": false,
+     "source": "NAME = \"reversion-spot\"\n\nimport numpy as np\nimport math\n\ndef score(env, state, region_mask):\n    # Under mean-reversion, profit above the initial level will decay back:\n    # harvest inflated POIs now, and give a mild boost to everything else by profit.\n    gap = state.profit - env.initial_profit[None, :]          # (M, n)\n    inflated = np.clip(gap, 0.0, None)\n    k = 0.35                                                  # assume non-zero reversion draws exist\n    urgency = inflated * k                                    # expected decay til tomorrow\n    base = state.profit.copy()\n    return base + urgency * base"
+    },
+    {
+     "name": "llm-bank-the-low",
+     "values": [
+      14.120364358810669,
+      14.117855380988788,
+      14.117900134208575,
+      14.08917251519699,
+      14.114640561605746,
+      14.113922049531345,
+      13.979647683138435,
+      13.86988138344115
+     ],
+     "gain": [
+      -0.0679921880444816,
+      -0.06759897855891062,
+      -0.06812905652734358,
+      -0.06838723966087734,
+      -0.06656910718549369,
+      -0.05401876605869127,
+      0.27095428162813917,
+      -0.07306202213967516
+     ],
+     "accepted": false,
+     "source": "NAME = \"bank-the-low\"\n\nimport numpy as np\nimport math\n\ndef score(env, state, region_mask):\n    # Mean reversion lifts POIs whose profit fell below initial. Banking them:\n    # today avoid draining the depressed ones (their expected value is rising),\n    # so they act as a stored gain to harvest later in the horizon.\n    gap = state.profit - env.initial_profit[None, :]\n    depressed = np.clip(-gap, 0.0, None)\n    days_left = np.maximum(env.T - state.t, 1).reshape(-1, 1)\n    penalty = depressed * (1.0 + math.log1p(days_left))\n    score_ = state.profit - 2.0 * penalty\n    score_ = score_ - 10.0 * (~region_mask)[None, :]\n    return score_"
+    },
+    {
+     "name": "llm-terminal-harvest",
+     "values": [
+      14.10121868742787,
+      14.098412849523376,
+      14.071437351840617,
+      14.042722860684723,
+      14.057601862793476,
+      14.057000215849516,
+      13.750741119535554,
+      13.813149763258338
+     ],
+     "gain": [
+      -0.0871378594272798,
+      -0.08704151002432248,
+      -0.11459183889530244,
+      -0.1148368941731448,
+      -0.12360780599776433,
+      -0.11094059974051973,
+      0.04204771802525897,
+      -0.1297936423224879
+     ],
+     "accepted": false,
+     "source": "NAME = \"terminal-harvest\"\n\nimport numpy as np\nimport math\n\ndef score(env, state, region_mask):\n    # Time-dependent exploitation: early on, harvest inflated POIs and protect\n    # depressed ones (they recover); near the horizon, grab everything by\n    # current profit since recovery no longer pays off. Trades spread now\n    # against the nodes left one step from activation.\n    gap = state.profit - env.initial_profit[None, :]\n    days_left = np.maximum(env.T - state.t, 0).reshape(-1, 1)\n    horizon_frac = np.clip(days_left / max(env.T, 1), 0.0, 1.0)\n    inflated = np.clip(gap, 0.0, None)\n    depressed = np.clip(-gap, 0.0, None)\n    urgency = inflated * horizon_frac                     # decay only matters while time remains\n    deferral = depressed * horizon_frac * 1.5             # defer depressed POIs while recovery time exists\n    score_ = state.profit + 2.0 * urgency - 2.0 * deferral\n    score_ = score_ - 10.0 * (~region_mask)[None, :]\n    return score_"
+    }
+   ],
+   "accepted": [],
+   "errors": []
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 4,
+   "cache_hits": 0,
+   "tokens_in": 5045,
+   "tokens_out": 7277
+  },
+  "build_seconds": 409.35405802726746
+ },
+ "rpp-foursquare-NYC-n100-s0-TREND": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "poe",
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 4,
+    "accepted": 15,
+    "rejected": 5,
+    "errors": [
+     "KeyError: 'mu4'",
+     "IndexError: boolean index did not match indexed array along dimension 0; dimension is 2 but corresponding boolean dimension is 100",
+     "AttributeError: 'Drift' object has no attribute 'scale'",
+     "ValueError: negative dimensions are not allowed",
+     "ValueError: operands could not be broadcast together with shapes (100,100) (2,100) "
+    ],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 120846.50820838149,
+      "pool": 10
+     },
+     {
+      "round": 1,
+      "best_ll_val": 120846.50820838149,
+      "pool": 18
+     }
+    ],
+    "usage": {
+     "calls": 4,
+     "cache_hits": 0,
+     "tokens_in": 6638,
+     "tokens_out": 4343
+    }
+   },
+   "n_llm": 15,
+   "n_dsl": 16,
+   "poe": {
+    "groups": [
+     {
+      "experts": 12,
+      "kept": 1,
+      "theta": [
+       1.008
+      ],
+      "loglik": 260420.13835844546
+     }
+    ]
+   }
+  },
+  "hypotheses": [
+   [
+    "uniform",
+    120846.50820838149,
+    0
+   ],
+   [
+    "uniform",
+    120844.14825677889,
+    1
+   ],
+   [
+    "uniform",
+    116270.50167732545,
+    2
+   ],
+   [
+    "llm:Drift",
+    114913.42122574702,
+    3
+   ],
+   [
+    "llm:Drift",
+    114910.4376166759,
+    4
+   ],
+   [
+    "uniform",
+    114901.60021055708,
+    5
+   ],
+   [
+    "uniform",
+    114666.60865077698,
+    6
+   ],
+   [
+    "uniform",
+    114580.31001396175,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-drift-hug",
+     "values": [
+      13.528815656869375,
+      13.572437557638793,
+      14.303947219808109,
+      15.433729632538613,
+      13.826189775118372,
+      14.035250728639001,
+      14.062776359555647,
+      13.726303385475406
+     ],
+     "gain": [
+      -0.41674560429716223,
+      -0.7553593310170648,
+      -0.3605179768008817,
+      -0.3751384430723217,
+      -0.41815141287349533,
+      -0.4759294598748074,
+      -0.477811111276365,
+      -0.7961782862413269
+     ],
+     "accepted": false,
+     "source": "NAME = \"drift-hug\"\n\ndef score(env, state, region_mask):\n    # H3 expert: the drift floor is narrowest in bucket d<=1 (w1=0.031 vs w0=0.032)\n    # only when today's visit sits near an already-visited POI. Give a strong,\n    # profit-weighted preference for nodes adjacent to the visited set so that\n    # tomorrow's band tightens exactly where the profit signal lives, on top of\n    # the raw harvest value the hub operator already captures.\n    n = state.profit.shape[1]\n    cur = state.visited.any(axis=1)\n    # distance from each POI to the nearest already-visited POI (global set)\n    d = env.dist.copy()\n    np.fill_diagonal(d, np.inf)\n    near = d.min(axis=1)  # (n,)\n    near_mask = np.clip(1.0 - near, 0.0, 1.0)  # 1 if adjacent, decaying\n    base = state.profit.copy()\n    boost = 0.35 * near_mask[None, :] * region_mask[None, :]\n    # small pull toward current location to keep the visited-set compact\n    step = np.arange(n)[None, :]\n    return np.where(region_mask[None, :], base + boost, -np.inf) + 0.0 * step"
+    },
+    {
+     "name": "llm-width-hedge",
+     "values": [
+      9.721303262192208,
+      9.750939019210577,
+      11.222339653753018,
+      11.253248760322771,
+      9.630110943185098,
+      10.801238367075815,
+      9.814895933802015,
+      11.057093406155827
+     ],
+     "gain": [
+      -4.224257998974329,
+      -4.576857869445281,
+      -3.4421255428559725,
+      -4.555619315288164,
+      -4.61423024480677,
+      -3.709941821437994,
+      -4.725691537029997,
+      -3.4653882655609056
+     ],
+     "accepted": false,
+     "source": "NAME = \"width-hedge\"\n\ndef score(env, state, region_mask):\n    # H4 expert: drift is pure uniform noise of fitted width (~0.06). Against a\n    # wide flat band, per-node profit is unreliable, so spread the picks:\n    # maximize the count of independent high-mean draws rather than the single\n    # top draw. Score = profit discounted by travel cost, favouring a fan-out\n    # that leaves more nodes live one step from activation (spread now vs nodes\n    # left trade via the remaining-days discount).\n    d_cur = env.dist[state.current][:, :]  # (M, n) via row-per-agent is wrong shape-safe: use per M\n    # env.dist[state.current] gives (M, n) because state.current is (M,)\n    remain = np.maximum(env.T - state.t, 1)\n    spread_bonus = 1.0 / remain  # worth spreading early, concentrating late\n    base = state.profit.copy()\n    travel = d_cur / max(env.T, 1)\n    return np.where(region_mask[None, :], base - 0.5 * travel + spread_bonus * base, -np.inf)"
+    },
+    {
+     "name": "llm-late-concentrate",
+     "values": [
+      10.563889582799238,
+      10.59845916451669,
+      12.030004062308358,
+      12.58154925594745,
+      9.875268917299094,
+      11.475807657527412,
+      10.37800882636979,
+      11.69266135432626
+     ],
+     "gain": [
+      -3.381671678367299,
+      -3.7293377241391674,
+      -2.634461134300633,
+      -3.227318819663484,
+      -4.369072270692774,
+      -3.035372530986397,
+      -4.162578644462222,
+      -2.829820317390473
+     ],
+     "accepted": false,
+     "source": "NAME = \"late-concentrate\"\n\ndef score(env, state, region_mask):\n    # H1 expert: uniform drift with the smallest fitted mean-gap means the\n    # optimal policy is greedy profit with no exploration bonus \u2014 but harvest\n    # leaves value on the table by not re-checking nodes whose profit may have\n    # drifted up since last visit. Add an optimism term proportional to the\n    # drift band on unvisited-today, high-initial-profit nodes: treat the top\n    # of the uniform band as the achievable value one step from activation.\n    base = state.profit.copy()\n    initial = env.initial_profit[None, :]\n    untouched = ~state.visited\n    optimism = 0.5 * np.abs(base - initial) * untouched\n    # mild distance penalty keeps routing feasible so the added value is realised\n    d_cur = env.dist[state.current]\n    return np.where(region_mask[None, :], base + optimism - 0.3 * d_cur / max(env.T, 1), -np.inf)"
+    },
+    {
+     "name": "llm-harvest-route-tiebreak",
+     "values": [
+      12.069166695363219,
+      12.10572972485641,
+      12.425540055197139,
+      13.117289074296199,
+      11.936876517477346,
+      11.938551232022409,
+      12.189014974611743,
+      12.184439742833538
+     ],
+     "gain": [
+      -1.8763945658033183,
+      -2.222067163799448,
+      -2.238925141411851,
+      -2.691579001314736,
+      -2.3074646705145216,
+      -2.5726289564913998,
+      -2.3515724962202693,
+      -2.338041928883195
+     ],
+     "accepted": false,
+     "source": "NAME = \"harvest-route-tiebreak\"\n\ndef score(env, state, region_mask):\n    # Harvest, but break ties / near-ties by travel cost from the current node.\n    # Under uniform-mean hypotheses the drift gives no directional info, so the\n    # only exploitable signal beyond profit is routing cost; a small eta turns\n    # near-equal profits into strictly better routes than pure harvest.\n    d_cur = env.dist[state.current, :]                      # (M, n)\n    s = state.profit - 0.02 * d_cur\n    s = np.where(region_mask[None, :], s, -1e9)\n    s = np.where(state.visited, -1e9, s)\n    return s"
+    },
+    {
+     "name": "llm-drift-band-avoid",
+     "values": [
+      13.332441329313543,
+      13.38147935983607,
+      13.445585368844087,
+      14.500661451252416,
+      12.739343383083556,
+      13.138635983193511,
+      13.02312143572312,
+      13.149494454897098
+     ],
+     "gain": [
+      -0.6131199318529941,
+      -0.9463175288197867,
+      -1.2188798277649031,
+      -1.3082066243585189,
+      -1.504997804908312,
+      -1.3725442053202972,
+      -1.5174660351088924,
+      -1.3729872168196344
+     ],
+     "accepted": false,
+     "source": "NAME = \"drift-band-avoid\"\n\ndef score(env, state, region_mask):\n    # Tuned for H3: nodes within distance 1 of a POI already visited today sit in\n    # the narrow drift band, so visiting them wastes the wide-noise upside that\n    # unvisited-band nodes still carry. De-prioritise the narrow band, keep the\n    # wide band harvestable, with a mild route-cost tiebreak.\n    d_cur = env.dist[state.current, :]                      # (M, n)\n    # distance from each POI j to the nearest POI visited today\n    dv = np.min(np.where(state.visited[:, None, :],\n                         env.dist.T[None, :, :],\n                         np.inf), axis=2)                   # (M, n)\n    near = (dv <= 1.0).astype(float)\n    s = state.profit - 0.05 * near - 0.01 * d_cur\n    s = np.where(region_mask[None, :], s, -1e9)\n    s = np.where(state.visited, -1e9, s)\n    return s"
+    },
+    {
+     "name": "llm-hold-top-harvest",
+     "values": [
+      12.614236470933598,
+      12.65879716859417,
+      13.27601311296187,
+      13.754169227689818,
+      12.37405134337673,
+      12.511861896788865,
+      12.65595989771511,
+      12.675956769970588
+     ],
+     "gain": [
+      -1.331324790232939,
+      -1.668999720061688,
+      -1.3884520836471204,
+      -2.0546988479211166,
+      -1.8702898446151384,
+      -1.9993182917249435,
+      -1.8846275731169015,
+      -1.846524901746145
+     ],
+     "accepted": false,
+     "source": "NAME = \"hold-top-harvest\"\n\ndef score(env, state, region_mask):\n    # Trade spread now against the node one step from activation: hold the single\n    # highest-profit POI unvisited today so its uniform drift accumulates spread,\n    # and harvest the rest at full profit. Costs almost nothing today under\n    # zero-mean drift, gains a widened draw tomorrow.\n    s = state.profit.copy()\n    masked = np.where(region_mask[None, :] & ~state.visited, s, -np.inf)\n    top = np.argmax(masked, axis=1)                          # (M,)\n    rows = np.arange(s.shape[0])\n    s[rows, top] -= 1.0                                      # demote the top node\n    d_cur = env.dist[state.current, :]\n    s = s - 0.01 * d_cur\n    s = np.where(region_mask[None, :], s, -1e9)\n    s = np.where(state.visited, -1e9, s)\n    return s"
+    }
+   ],
+   "accepted": [],
+   "errors": []
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 6,
+   "cache_hits": 0,
+   "tokens_in": 8806,
+   "tokens_out": 7244
+  },
+  "build_seconds": 451.8940107822418
+ },
+ "rpp-foursquare-NYC-n100-s0-SPILL": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "poe",
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 3,
+    "accepted": 14,
+    "rejected": 1,
+    "errors": [
+     "AttributeError: 'DriftFeatures' object has no attribute 'crowd'"
+    ],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 121509.63021742125,
+      "pool": 8
+     },
+     {
+      "round": 1,
+      "best_ll_val": 121509.63021742125,
+      "pool": 17
+     }
+    ],
+    "usage": {
+     "calls": 3,
+     "cache_hits": 0,
+     "tokens_in": 5449,
+     "tokens_out": 3278
+    }
+   },
+   "n_llm": 14,
+   "n_dsl": 16,
+   "poe": {
+    "groups": [
+     {
+      "experts": 12,
+      "kept": 4,
+      "theta": [
+       0.325,
+       0.321,
+       0.295,
+       0.064
+      ],
+      "loglik": 257174.9479615348
+     }
+    ]
+   }
+  },
+  "hypotheses": [
+   [
+    "uniform",
+    121509.63021742125,
+    0
+   ],
+   [
+    "uniform",
+    117221.1046261662,
+    1
+   ],
+   [
+    "uniform",
+    117179.22446759266,
+    2
+   ],
+   [
+    "uniform",
+    117178.17476917124,
+    3
+   ],
+   [
+    "uniform",
+    117176.90568930094,
+    4
+   ],
+   [
+    "uniform",
+    117155.91147115616,
+    5
+   ],
+   [
+    "mixture",
+    112911.14370619856,
+    6
+   ],
+   [
+    "gaussian",
+    112180.85544410757,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-gauss-ridge-ride",
+     "values": [
+      12.652471146327436,
+      12.787709488714686,
+      12.841167951142054,
+      12.851639960181009,
+      12.829635851447133,
+      12.884848858422012,
+      12.67829876625456,
+      12.463476180709641
+     ],
+     "gain": [
+      -1.216060674008748,
+      -1.3965613188121466,
+      -1.3793556473001587,
+      -1.3955349603947642,
+      -1.3796116744145817,
+      -1.3569641635020684,
+      -1.4073962617328775,
+      -1.3442997951653286
+     ],
+     "accepted": false,
+     "source": "NAME = \"gauss-ridge-ride\"\n\ndef score(env, state, region_mask):\n    # For gaussian drift hypotheses: profit decays from a moving peak; ride the ridge\n    # by scoring POIs along the gradient direction of the gaussian field.\n    M = state.profit.shape[0]\n    diff = env.loc[None, :, :] - env.loc[:, None, :]    # (n, n, 2)\n    sq = (diff ** 2).sum(-1)                            # (n, n) squared distances\n    W = np.exp(-sq / (2.0 * (0.3 * math.sqrt(env.n)) ** 2))\n    # local mean profit = smoothed estimate of field, gradient toward richer ridge\n    smooth = state.profit @ W / (W.sum(axis=1, keepdims=True).T + 1e-9)  # (M, n)\n    d = env.dist[state.current, :]\n    travel_penalty = 0.12 * d / math.sqrt(env.n)\n    gain = smooth - state.profit                        # upside left in the ridge\n    return state.profit + 0.9 * gain - travel_penalty"
+    },
+    {
+     "name": "llm-mixture-bandit",
+     "values": [
+      12.128716430010705,
+      12.268559520766862,
+      12.236298012653691,
+      12.332397098631912,
+      12.226603919276862,
+      12.284186578964404,
+      11.570783018314689,
+      11.369562191243908
+     ],
+     "gain": [
+      -1.7398153903254787,
+      -1.9157112867599704,
+      -1.984225585788522,
+      -1.9147778219438614,
+      -1.982643606584853,
+      -1.9576264429596772,
+      -2.5149120096727486,
+      -2.4382137846310616
+     ],
+     "accepted": false,
+     "source": "NAME = \"mixture-bandit\"\n\ndef score(env, state, region_mask):\n    # For mixture hypotheses: split POIs into hot (high profit) and warm (mid) bands;\n    # harvest hot greedily but seed warm-band nodes near hot ones to catch the drift.\n    M = state.profit.shape[0]\n    p = state.profit\n    hi = np.quantile(p, 0.75, axis=1, keepdims=True)\n    lo = np.quantile(p, 0.40, axis=1, keepdims=True)\n    hot = (p >= hi).astype(float)\n    warm = ((p >= lo) & (p < hi)).astype(float)\n    # warm nodes adjacent to hot nodes get a seeding bonus\n    near = env.dist < 0.3 * math.sqrt(env.n)\n    seed_bonus = 0.6 * (warm * (hot @ near.astype(float)) )\n    d = env.dist[state.current, :]\n    return p + seed_bonus - 0.10 * d / math.sqrt(env.n)"
+    },
+    {
+     "name": "llm-tight-horizon-harvest",
+     "values": [
+      11.103202307654852,
+      11.061684670714984,
+      11.116249974235394,
+      11.12271081647705,
+      11.112544792094539,
+      11.083944392213809,
+      11.032304555038529,
+      10.835474271920669
+     ],
+     "gain": [
+      -2.7653295126813315,
+      -3.122586136811849,
+      -3.1042736242068187,
+      -3.124464104098724,
+      -3.0967027337671755,
+      -3.157868629710272,
+      -3.0533904729489088,
+      -2.972301703954301
+     ],
+     "accepted": false,
+     "source": "NAME = \"tight-horizon-harvest\"\n\ndef score(env, state, region_mask):\n    n = env.dist.shape[0]\n    M = state.profit.shape[0]\n    # time pressure: as T-t shrinks, prefer closer, high-profit nodes\n    remaining = max(1.0, float(env.T) - float(state.t) + 1.0)\n    urgency = remaining / max(1.0, float(env.T))\n    cur = np.asarray(state.current).reshape(M)\n    d = env.dist[cur, :]  # (M, n)\n    p = state.profit * region_mask[None, :]\n    # harvesting now vs later: with little time left, discount future potential\n    gain = p / (1.0 + d)\n    # if far from node, it costs travel that could be spent tomorrow; discount by urgency\n    close_boost = np.exp(-d / (urgency * 20.0 + 1e-9))\n    return gain * (0.5 + close_boost)"
+    },
+    {
+     "name": "llm-gauss-center-pull",
+     "values": [
+      0.04922199732022396,
+      0.02951583486006812,
+      0.0307299255707211,
+      0.03085981566297022,
+      0.03071078640134131,
+      0.028501267995889507,
+      0.06150718253115944,
+      0.10390601573164576
+     ],
+     "gain": [
+      -13.81930982301596,
+      -14.154754972666765,
+      -14.189793672871492,
+      -14.216315104912804,
+      -14.178536739460373,
+      -14.213311753928192,
+      -14.024187845456279,
+      -13.703869960143324
+     ],
+     "accepted": false,
+     "source": "NAME = \"gauss-center-pull\"\n\ndef score(env, state, region_mask):\n    # H7 flavor: drifting profits follow a gaussian bump around env.loc centroid;\n    # prefer nodes near the bump center whose current profit is already rising.\n    M = state.profit.shape[0]\n    n = env.dist.shape[0]\n    cur = np.asarray(state.current).reshape(M)\n    d = env.dist[cur, :]  # (M, n)\n    locs = env.loc[region_mask]  # (k, 2)\n    center = locs.mean(axis=0)\n    dd2 = ((env.loc - center[None, :]) ** 2).sum(axis=1)  # (n,)\n    bump = np.exp(-dd2 / (2.0 * (np.std(env.loc) + 1e-9) ** 2))  # (n,)\n    p = state.profit * region_mask[None, :]\n    # neighbors already activated near this node signal rising drift\n    near = (env.dist < 15.0).astype(float)\n    neighbor_p = p @ near.T  # (M, n) avg-ish neighbor profit signal per node? -> project back\n    rise = neighbor_p @ near  # (M, n) smoothed profit field\n    return (p + 0.5 * rise * bump[None, :]) / (1.0 + d)"
+    },
+    {
+     "name": "llm-mixture-unlock-two-step",
+     "values": [
+      6.5322854434964785,
+      6.8880559008136695,
+      6.921852636804806,
+      6.935177547802012,
+      6.92229915664667,
+      6.929126129688768,
+      6.835459595845491,
+      6.486587568459754
+     ],
+     "gain": [
+      -7.336246376839705,
+      -7.296214906713163,
+      -7.2986709616374075,
+      -7.311997372773761,
+      -7.286948369215045,
+      -7.3126868922353125,
+      -7.250235432141946,
+      -7.321188407415216
+     ],
+     "accepted": false,
+     "source": "NAME = \"mixture-unlock-two-step\"\n\ndef score(env, state, region_mask):\n    # H6 flavor: some nodes act as gateways; a node today is worth its profit\n    # plus a fraction of the profit it unlocks one step away (nodes whose\n    # activation is imminent once we stand next to them).\n    M = state.profit.shape[0]\n    n = env.dist.shape[0]\n    cur = np.asarray(state.current).reshape(M)\n    d = env.dist[cur, :]  # (M, n)\n    p = state.profit * region_mask[None, :]\n    # step-1 reachability from each candidate node\n    adj = (env.dist < 10.0).astype(np.float64) * region_mask[None, :].astype(np.float64)\n    adj = adj - np.diag(np.diag(adj))\n    # potential reachable tomorrow from candidate i\n    unlock = p @ adj.T  # (M, n): total neighbor profit of node i\n    # normalize by degree so dense hubs are not over-rewarded\n    deg = adj.sum(axis=1, keepdims=True).T + 1e-9  # (1, n)\n    unlock = unlock / deg\n    return (p + 0.35 * unlock) / (1.0 + d)"
+    }
+   ],
+   "accepted": [],
+   "errors": [
+    "ValueError: operands could not be broadcast together with shapes (100,100) (1,2,100) "
+   ]
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 5,
+   "cache_hits": 0,
+   "tokens_in": 6818,
+   "tokens_out": 5076
+  },
+  "build_seconds": 556.341540813446
+ },
+ "rpp-foursquare-NYC-n100-s0-CROWD": {
+  "config": {
+   "law_source": "llm+dsl",
+   "operator_source": "llm+hand",
+   "level_im": 2,
+   "level_rpp": 3,
+   "val_frac": 0.3,
+   "eps": 5.0,
+   "cap": 8,
+   "planner": "mcts",
+   "mode": "mean",
+   "alpha": 0.2,
+   "n_sims": 150,
+   "tree": "root",
+   "M": 8,
+   "no_hypset": false,
+   "true_law": false,
+   "no_belief": false,
+   "llm_rounds": 2,
+   "llm_k": 5,
+   "law_mixture": "poe",
+   "llm_budget": 6,
+   "op_rounds": 2,
+   "op_k": 3,
+   "op_budget": 2,
+   "op_delta": 0.5,
+   "diagnose": false,
+   "band_paths": 64,
+   "seed": 0
+  },
+  "laws": {
+   "source": "llm+dsl",
+   "fallback": false,
+   "llm": {
+    "calls": 4,
+    "accepted": 16,
+    "rejected": 5,
+    "errors": [
+     "UnicodeEncodeError: 'charmap' codec can't encode characters in position 576-582: character maps to <undefined>",
+     "AttributeError: 'DriftFeatures' object has no attribute 'past_visits'",
+     "ValueError: operands could not be broadcast together with remapped shapes [original->remapped]: (2,)  and requested shape (2,100)",
+     "ValueError: operands could not be broadcast together with remapped shapes [original->remapped]: (100,2)  and requested shape (2,100)",
+     "ValueError: operands could not be broadcast together with remapped shapes [original->remapped]: (2,)  and requested shape (2,100)"
+    ],
+    "rounds": [
+     {
+      "round": 0,
+      "best_ll_val": 75581.12796287112,
+      "pool": 11
+     },
+     {
+      "round": 1,
+      "best_ll_val": 75581.12796287112,
+      "pool": 19
+     }
+    ],
+    "usage": {
+     "calls": 4,
+     "cache_hits": 0,
+     "tokens_in": 7139,
+     "tokens_out": 5385
+    }
+   },
+   "n_llm": 16,
+   "n_dsl": 16,
+   "poe": {
+    "groups": [
+     {
+      "experts": 12,
+      "kept": 3,
+      "theta": [
+       0.59,
+       0.3,
+       0.194
+      ],
+      "loglik": 172942.47654267904
+     }
+    ]
+   }
+  },
+  "hypotheses": [
+   [
+    "gaussian",
+    75581.12796287112,
+    0
+   ],
+   [
+    "gaussian",
+    75212.28184985594,
+    1
+   ],
+   [
+    "poe[3]",
+    74785.20164451152,
+    2
+   ],
+   [
+    "llm:Drift",
+    74511.57194468756,
+    3
+   ],
+   [
+    "llm:Drift",
+    74502.461566942,
+    4
+   ],
+   [
+    "gaussian",
+    74354.11272408001,
+    5
+   ],
+   [
+    "gaussian",
+    74280.67283263573,
+    6
+   ],
+   [
+    "gaussian",
+    74256.72065821187,
+    7
+   ]
+  ],
+  "identifiability": {
+   "tie_groups": [
+    [
+     0
+    ],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [
+     3
+    ],
+    [
+     4
+    ],
+    [
+     5
+    ],
+    [
+     6
+    ],
+    [
+     7
+    ]
+   ],
+   "zero_discriminating": [],
+   "m": 8
+  },
+  "operators": {
+   "source": "llm+hand",
+   "calls": 2,
+   "candidates": [
+    {
+     "name": "llm-margin-prob",
+     "values": [
+      12.037126023027623,
+      9.837033176375893,
+      12.246331801875705,
+      12.142668490884997,
+      12.140052137405577,
+      12.064538200038385,
+      12.48147000912955,
+      9.678813506128336
+     ],
+     "gain": [
+      -0.17682088643434746,
+      -0.11438850446535298,
+      -0.17819755405186655,
+      0.0690413824570335,
+      0.0697779458667771,
+      -0.31009664140161064,
+      -0.10828187382199239,
+      -0.16179806801205388
+     ],
+     "accepted": false,
+     "source": "NAME = \"margin-prob\"\n\ndef score(env, state, region_mask):\n    # (operator using prob-style one-step-in-front reasoning: a POI whose congestion count sits just below the sigma-regime threshold gains tight variance next round, so visiting it today converts a risky silent cell into a reliable revenue node; score discounts variance and rewards threshold-adjacent nodes, beating harvest on H3/H4 where silent sigma 0.5 hides true value)\n    d = env.dist\n    visited = state.visited.astype(float)\n    kernel = np.exp(-np.square(d / 0.019 / 1.6))  # width ~0.030 effective\n    v = (kernel @ visited.T).T  # (M, n)\n    scale = np.where(v > 0.5, 0.030, 0.5)\n    # posterior mean under linear congestion (H3/H4)\n    drift = -0.020 * v\n    # risk-adjust: silent POIs heavily discounted (their drift estimate is uninformative at sigma 0.5 / scaling of returns)\n    score = state.profit + drift - 0.6 * scale\n    # margin-prob term: POIs one visit away from leaving the silent regime (v in (0.3, 0.5))\n    # get a bonus \u2014 visiting today both earns now and buys information/regime certainty for tomorrow\n    one_step = (v > 0.3) & (v <= 0.5)\n    score = score + 0.9 * one_step\n    # tie-break toward near nodes from current to cut travel drag (reposition's weakness, harvest's blindness)\n    d_cur = env.dist[state.current, :]\n    score = score - 0.15 * d_cur / max(1.0, float(np.nanmax(d_cur)))\n    # also mild share-awareness: spreading visits across POIs beats double-dipping under per_visit drift\n    today_bonus = (v < 0.1)\n    score = score + 0.3 * today_bonus\n    return np.where(region_mask[None, :], score, -np.inf)"
+    },
+    {
+     "name": "llm-congestion-harvest-now",
+     "values": [
+      12.154040442439882,
+      9.883909027550075,
+      12.38039736756555,
+      12.215412680384407,
+      12.212150338077063,
+      12.362147624051108,
+      12.497783498285541,
+      9.688182010534817
+     ],
+     "gain": [
+      -0.05990646702208835,
+      -0.06751265329117118,
+      -0.0441319883620217,
+      0.1417855719564436,
+      0.1418761465382623,
+      -0.012487217388887473,
+      -0.09196838466600177,
+      -0.15242956360557258
+     ],
+     "accepted": false,
+     "source": "NAME = \"congestion-harvest-now\"\n\ndef score(env, state, region_mask):\n    # Visit congested-but-still-profitable nodes BEFORE their drift erases them.\n    # Harvest ignores tomorrow: a node with equal current profit but many nearby\n    # past visits will keep losing value under all congestion hypotheses\n    # (per_visit ~0.02/day), so it should be banked today, while quiet nodes\n    # can safely wait one more day.\n    d = env.dist\n    w = 0.032\n    ker = np.exp(-(d * d) / (2.0 * w * w))          # (n, n)\n    vis = state.visited.astype(float)               # (M, n): nodes already visited\n    v = vis @ ker.T                                  # (M, n): past visits near each POI\n    v = v * region_mask.astype(float)[None, :]\n    per_visit = 0.021\n    urgency = per_visit * v                          # expected additional drift tomorrow\n    base = state.profit + urgency\n    return np.where(region_mask[None, :], base, -1.0e9)"
+    },
+    {
+     "name": "llm-silent-optimism",
+     "values": [
+      12.154040442439882,
+      9.883909027550075,
+      12.38039736756555,
+      12.215412680384407,
+      12.212150338077063,
+      12.362147624051108,
+      12.497783498285541,
+      9.688182010534817
+     ],
+     "gain": [
+      -0.05990646702208835,
+      -0.06751265329117118,
+      -0.0441319883620217,
+      0.1417855719564436,
+      0.1418761465382623,
+      -0.012487217388887473,
+      -0.09196838466600177,
+      -0.15242956360557258
+     ],
+     "accepted": false,
+     "source": "NAME = \"silent-optimism\"\n\ndef score(env, state, region_mask):\n    # Optimism-in-the-face-of-uncertainty: nodes never touched nearby have\n    # sigma_silent ~ 0.5 in the congestion experts, i.e. a huge upside tail,\n    # while visited-nearby nodes are pinned at sigma ~ 0.03. Sample the quiet\n    # nodes whose posterior mean is decent; among them prefer highest profit.\n    d = env.dist\n    w = 0.030\n    ker = np.exp(-(d * d) / (2.0 * w * w))\n    vis = state.visited.astype(float)\n    v = vis @ ker.T                                  # (M, n)\n    silent = np.exp(-3.0 * np.maximum(v, 0.0))       # 1 when untouched, ~0 when crowded\n    upside = 0.12 * silent * (1.0 + np.abs(state.profit))\n    base = state.profit + upside\n    return np.where(region_mask[None, :], base, -1.0e9)"
+    },
+    {
+     "name": "llm-one-step-from-activation",
+     "values": [
+      12.154040442439882,
+      9.883909027550075,
+      12.38039736756555,
+      12.215412680384407,
+      12.212150338077063,
+      12.362147624051108,
+      12.497783498285541,
+      9.688182010534817
+     ],
+     "gain": [
+      -0.05990646702208835,
+      -0.06751265329117118,
+      -0.0441319883620217,
+      0.1417855719564436,
+      0.1418761465382623,
+      -0.012487217388887473,
+      -0.09196838466600177,
+      -0.15242956360557258
+     ],
+     "accepted": false,
+     "source": "NAME = \"one-step-from-activation\"\n\ndef score(env, state, region_mask):\n    # Trade spread now against nodes left one step from activation: nodes whose\n    # profit sits just below today's takeable band are the cheapest to tip over\n    # into activation with a single visit, so prioritise them ahead of nodes\n    # already deep inside the band (those can wait) and far-below nodes.\n    p = state.profit\n    rm = region_mask.astype(float)[None, :]\n    masked = np.where(region_mask[None, :], p, -1.0e9)\n    top = masked.max(axis=1, keepdims=True)          # (M, 1) best takeable profit\n    band = np.maximum(top, 1.0e-6)\n    gap = (band - p) / (band + 1.0e-6)               # 0 = at activation, grows below it\n    weight = np.exp(-np.square(gap / 0.12))          # peaks in the narrow band just under the top\n    base = p + 0.35 * weight * np.maximum(p, 0.0)\n    return np.where(region_mask[None, :], base, -1.0e9)"
+    }
+   ],
+   "accepted": [],
+   "errors": [
+    "ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()"
+   ]
+  },
+  "library": [
+   "harvest",
+   "sweep",
+   "reposition",
+   "wait"
+  ],
+  "llm_usage": {
+   "calls": 6,
+   "cache_hits": 0,
+   "tokens_in": 10606,
+   "tokens_out": 9874
+  },
+  "build_seconds": 1229.5993440151215
+ }
+}
