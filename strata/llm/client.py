@@ -14,6 +14,7 @@ fixed cache the whole pipeline replays deterministically and offline.
 """
 
 import hashlib
+import http.client
 import json
 import os
 import time
@@ -61,6 +62,8 @@ class Chat:
 
     def _cache_path(self, messages, sample):
         payload = [self.model, messages] if sample == 0 else [self.model, messages, sample]
+        if self.temperature is not None:  # sampled answers must not collide with greedy ones
+            payload.append({"temperature": self.temperature})
         h = hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
         return os.path.join(self.cache_dir, h[:2], h + ".json")
 
@@ -90,7 +93,9 @@ class Chat:
                 with urllib.request.urlopen(req, timeout=600) as r:
                     data = json.loads(r.read().decode("utf-8"))
                 break
-            except (urllib.error.URLError, TimeoutError) as e:
+            # dropped connections (http.client.RemoteDisconnected, resets) are not URLErrors
+            except (urllib.error.URLError, TimeoutError, http.client.HTTPException,
+                    ConnectionError) as e:
                 if attempt == self.max_retries - 1:
                     detail = type(e).__name__
                     if isinstance(e, urllib.error.HTTPError):

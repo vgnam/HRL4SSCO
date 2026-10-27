@@ -457,7 +457,40 @@ def _describe(law):
     return "%s (DSL program)" % getattr(law, "name", type(law).__name__)
 
 
-def _prompt(domain, stats, pool, k, focus=None, residuals=None, errors=None):
+EXPERT_TEXT = {
+    "im": ("Your programs are experts in a product of experts (PoE-World): the final law is "
+           "p = sigmoid(beta + sum_i theta_i * logit(p_i)) with fitted weights theta_i >= 0, so "
+           "the experts' log-odds add up. Each expert should model ONE mechanism only (e.g. a "
+           "degree normalisation, a threshold / complex-contagion effect, exposure memory, a "
+           "community or node-type difference, saturation) and return 0.5 wherever it has "
+           "nothing to say -- other experts cover the rest. Prefer many small, different "
+           "experts over one program that tries to explain everything."),
+    "rpp": ("Your programs are experts in a product of experts (PoE-World): each expert is "
+            "read as a Gaussian (mean, scale) and the final drift is their weighted product "
+            "(precision-weighted mean). Each expert should model ONE mechanism only (e.g. a "
+            "regional trend, spill-over from today's visits, mean reversion, seasonality, "
+            "congestion from past visits) and use a large scale wherever it has nothing to say "
+            "-- other experts cover the rest. Prefer many small, different experts over one "
+            "program that tries to explain everything."),
+}
+
+
+MIX_TEXT = {
+    "im": ("Your programs are experts in a mixture model built for this problem: experts that act "
+           "on the same node at once (degree normalisation, thresholds, exposure memory, "
+           "saturation) add up in log-odds with fitted non-negative weights, and different node "
+           "types (nodes that follow different laws) become separate components with a per-node "
+           "gate inferred from the data. So each expert should capture ONE mechanism or ONE node "
+           "type's law, and return 0.5 wherever it has nothing to say."),
+    "rpp": ("Your programs are experts in an additive model built for this problem: the predicted "
+            "change is b + sum_i theta_i * mean_i with fitted non-negative weights, and the noise "
+            "family and width are fitted separately (your scale is ignored). So each expert's mean "
+            "should capture ONE additive effect (a regional trend, spill-over from today's visits, "
+            "congestion from past visits, mean reversion, seasonality) and be 0 elsewhere."),
+}
+
+
+def _prompt(domain, stats, pool, k, focus=None, residuals=None, errors=None, experts=False):
     env_text = IM_ENV_TEXT if domain == "im" else RPP_ENV_TEXT
     template = IM_TEMPLATE if domain == "im" else RPP_TEMPLATE
     cls = "Law" if domain == "im" else "Drift"
@@ -465,12 +498,19 @@ def _prompt(domain, stats, pool, k, focus=None, residuals=None, errors=None):
         "You are reverse-engineering the hidden stochastic law of an environment from logged data.",
         env_text, "", "Statistics of the logged transitions:", stats, "",
     ]
-    if pool:
+    mix = experts == "mix"
+    if pool and not mix:
         lines.append("Current hypotheses with their held-out log-likelihood (higher is better):")
         for item in pool[:5]:
             lines.append("- held-out LL %.1f:\n%s" % (item["ll_val"], _describe(item["law"])))
         lines.append("")
-    if focus is not None:
+    if focus is not None and mix:
+        lines += ["Current mixture model (held-out LL %.1f) -- its experts and weights:"
+                  % focus["ll_val"], _describe(focus["law"]), "",
+                  "Where the MIXTURE's predictions disagree most with the data:", residuals or "",
+                  "", "Write new experts that fix exactly these cells; they are added to the "
+                  "mixture and refitted with the existing experts.", ""]
+    elif focus is not None:
         lines += ["Improve or extend this program:", _describe(focus["law"]), "",
                   "Where its predictions disagree most with the data:", residuals or "", ""]
     if errors:
@@ -486,6 +526,9 @@ def _prompt(domain, stats, pool, k, focus=None, residuals=None, errors=None):
         "some parameter values): each candidate must be a structurally different mechanism, "
         "ideally one that agrees with the data but predicts differently where the data is thin.",
     ]
+    if experts:
+        texts = MIX_TEXT if mix else EXPERT_TEXT
+        lines.append(texts["im" if domain == "im" else "rpp"])
     return [{"role": "user", "content": "\n".join(lines)}]
 
 
@@ -529,7 +572,8 @@ def _candidates_from_answer(domain, answer, obj):
 
 
 def synthesize_laws(domain, episodes_train, episodes_val, obj, chat, rounds=3, k=3,
-                    budget_calls=8, delta=1.0, patience=2, seed_laws=(), seed=0, c_explore=1.0):
+                    budget_calls=8, delta=1.0, patience=2, seed_laws=(), seed=0, c_explore=1.0,
+                    experts=False):
     """LLM synthesis of law programs; returns ``(fitted_laws, report)``."""
     domain = str(domain).lower()
     stats = statistics_tables(domain, episodes_train, obj)
@@ -541,6 +585,20 @@ def synthesize_laws(domain, episodes_train, episodes_val, obj, chat, rounds=3, k
     report = {"calls": 0, "accepted": 0, "rejected": 0, "errors": [], "rounds": []}
     best = pool[0]["ll_val"] if pool else -np.inf
     stale, sample = 0, 0
+    mix = experts == "mix"
+    current = None
+    if mix:
+        from strata.laws import mixture
+
+        def refit_mixture():
+            if not pool:
+                return None
+            law = mixture.quick_mixture(domain, [it["law"] for it in pool], episodes_train,
+                                        episodes_val, obj, seed=seed)
+            return law
+
+        current = refit_mixture()
+        best = current.ll_val if current is not None else -np.inf
 
     def ask(messages):
         nonlocal sample
@@ -572,7 +630,9 @@ def synthesize_laws(domain, episodes_train, episodes_val, obj, chat, rounds=3, k
         if report["calls"] >= budget_calls:
             break
         focus = None
-        if r > 0 and pool:
+        if mix and current is not None:
+            focus = {"law": current, "ll_val": current.ll_val}
+        elif r > 0 and pool:
             total = sum(it["refined"] for it in pool) + 1
             scale = max(1.0, abs(pool[0]["ll_val"]) * 0.01)
             scores = [it["ll_val"] + c_explore * scale * math.sqrt(math.log(total + 1) / (1 + it["refined"]))
@@ -580,18 +640,26 @@ def synthesize_laws(domain, episodes_train, episodes_val, obj, chat, rounds=3, k
             focus = pool[int(np.argmax(scores))]
             focus["refined"] += 1
         residuals = residual_tables(domain, focus["law"], episodes_train, obj) if focus else None
-        answer = ask(_prompt(domain, stats, pool, k, focus, residuals))
+        if mix and focus is not None and domain == "im":
+            residuals += ("\n\nPer community (node-type gaps):\n"
+                          + mixture.community_residuals(focus["law"], episodes_train, obj))
+        answer = ask(_prompt(domain, stats, pool, k, focus, residuals, experts=experts))
         laws, errors = _candidates_from_answer(domain, answer, obj)
         report["rejected"] += len(errors)
         report["errors"] += errors
         if errors and report["calls"] < budget_calls:
             fixed, errors2 = _candidates_from_answer(
-                domain, ask(_prompt(domain, stats, pool, k, focus, residuals, errors)), obj)
+                domain, ask(_prompt(domain, stats, pool, k, focus, residuals, errors,
+                                     experts=experts)), obj)
             laws += fixed
             report["rejected"] += len(errors2)
             report["errors"] += errors2
         evaluate(laws)
-        new_best = pool[0]["ll_val"] if pool else -np.inf
+        if mix:
+            current = refit_mixture()
+            new_best = current.ll_val if current is not None else -np.inf
+        else:
+            new_best = pool[0]["ll_val"] if pool else -np.inf
         report["rounds"].append({"round": r, "best_ll_val": new_best, "pool": len(pool)})
         if new_best > best + delta:
             best, stale = new_best, 0
@@ -618,11 +686,15 @@ def dsl_candidates(domain, episodes, obj, level=2):
 
 
 def propose(domain, episodes_train, episodes_val, obj, chat=None, source="llm+dsl",
-            level=2, **llm_kwargs):
+            level=2, mixture="none", **llm_kwargs):
     """Candidate laws for the hypothesis set, plus a report.
 
     With ``source`` containing ``"llm"`` and ``chat=None`` the call falls back to
-    the DSL and records it in the report.
+    the DSL and records it in the report. ``mixture="poe"`` asks the LLM for small
+    single-mechanism experts and adds products of experts (:mod:`strata.laws.poe`)
+    over all candidates; ``mixture="mix"`` drives the synthesis by the residuals of
+    the current problem-shaped mixture (:mod:`strata.laws.mixture`) and adds the
+    fitted mixtures.
     """
     domain = str(domain).lower()
     source = str(source).lower()
@@ -635,8 +707,67 @@ def propose(domain, episodes_train, episodes_val, obj, chat=None, source="llm+ds
         else:
             seeds = sorted(dsl_laws, key=lambda l: -float(getattr(l, "loglik", -np.inf) or -np.inf))[:3]
             llm_laws, rep = synthesize_laws(domain, episodes_train, episodes_val, obj, chat,
-                                            seed_laws=seeds, **llm_kwargs)
+                                            seed_laws=seeds,
+                                            experts="mix" if mixture == "mix" else mixture == "poe",
+                                            **llm_kwargs)
             report["llm"] = rep
     out = llm_laws + (dsl_laws if ("dsl" in source or not llm_laws) else [])
     report["n_llm"], report["n_dsl"] = len(llm_laws), len(out) - len(llm_laws)
+    if mixture == "poe":
+        from strata.laws import poe
+
+        # products over every candidate program; they compete with their own
+        # experts on held-out likelihood in the hypothesis set
+        poe_laws, poe_report = poe.build_poe_laws(domain, out, episodes_train, obj)
+        report["poe"] = poe_report
+        out = poe_laws + out
+    elif mixture == "mix":
+        from strata.laws import mixture as mix_mod
+
+        # problem-shaped mixtures over every candidate; the contexts let the agent
+        # derive decision-changing alternatives (popped before the report is stored)
+        contexts, mix_report = mix_mod.build_mixtures(domain, out, episodes_train, episodes_val, obj)
+        report["mix"] = mix_report
+        report["_mix_contexts"] = contexts
+        out = [c.law for c in contexts] + out
     return out, report
+
+
+def discriminating_experts(domain, episodes_train, episodes_val, obj, chat, table, k=3, seed=0):
+    """One LLM round for experts that tell decision-changing mixtures apart.
+
+    ``table`` lists logged situations where the best mixture and its
+    alternatives (which fit the logs about as well but make the planner act
+    differently) predict differently.  Returns ``(fitted_laws, report)``.
+    """
+    domain = str(domain).lower()
+    template = IM_TEMPLATE if domain == "im" else RPP_TEMPLATE
+    cls = "Law" if domain == "im" else "Drift"
+    lines = [
+        "You are reverse-engineering the hidden stochastic law of an environment from logged data.",
+        IM_ENV_TEXT if domain == "im" else RPP_ENV_TEXT, "",
+        "Several mixture models fit the logged data almost equally well, but a planner using them "
+        "would act differently. Where they predict differently on logged situations:", table, "",
+        "Write %d new experts, each a mechanism that is plausible a priori for this kind of "
+        "environment and that would tell these models apart (it should agree with the observed "
+        "column and favour one side). Each as its own ```python block defining one class named %s "
+        "that follows exactly this template (numpy as np, math as math; no other imports, no I/O):"
+        % (k, cls),
+        template,
+        MIX_TEXT["im" if domain == "im" else "rpp"],
+    ]
+    report: Dict[str, Any] = {"calls": 1, "accepted": 0, "errors": []}
+    answer = chat([{"role": "user", "content": "\n".join(lines)}], sample=0)
+    laws, errors = _candidates_from_answer(domain, answer, obj)
+    report["errors"] = errors
+    fitted = []
+    for law in laws:
+        try:
+            f = fit_llm_law(domain, law, episodes_train, obj, seed=seed)
+        except Exception as e:  # noqa: BLE001
+            report["errors"].append("fit: %s" % e)
+            continue
+        if np.isfinite(float(f.loglik)):
+            fitted.append(f)
+    report["accepted"] = len(fitted)
+    return fitted, report

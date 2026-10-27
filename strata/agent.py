@@ -59,6 +59,11 @@ class StrataConfig:
     no_belief: bool = False
     llm_rounds: int = 2
     llm_k: int = 3
+    law_mixture: str = "none"          # none | poe (PoE-World products) | mix (problem-shaped)
+    mix_boot: int = 6                  # bootstrap refits tried as alternative mixtures
+    decision_sims: int = 60            # MCTS simulations of the first-decision check
+    decision_margin: float = 0.01      # relative value gap for an alternative to count
+    mix_disagree_round: bool = True    # one LLM round to tell decision-changing mixtures apart
     llm_budget: int = 6
     op_rounds: int = 2                 # round 2 sees the values of round 1's operators
     op_k: int = 3
@@ -97,7 +102,14 @@ class StrataAgent:
         else:
             cands, law_report = llm_propose.propose(
                 domain, train, val, obj, chat=self.chat, source=cfg.law_source, level=level,
-                rounds=cfg.llm_rounds, k=cfg.llm_k, budget_calls=cfg.llm_budget, seed=cfg.seed)
+                rounds=cfg.llm_rounds, k=cfg.llm_k, budget_calls=cfg.llm_budget, seed=cfg.seed,
+                mixture=cfg.law_mixture)
+            contexts = law_report.pop("_mix_contexts", None)
+            if contexts:
+                extra, law_report["mix_alternatives"] = self._decision_alternatives(
+                    instance, obj, contexts[0], train, val)
+                seen = {id(c) for c in extra}
+                cands = extra + [c for c in cands if id(c) not in seen]
         kw = {"indeg": obj.indeg, "graph": obj} if domain == "im" else {"env": obj}
         if cfg.true_law and domain != "im":
             # RPP drift laws have no likelihood (logpdf); with one hypothesis none is needed
@@ -150,10 +162,83 @@ class StrataAgent:
             "llm_usage": self.chat.usage() if hasattr(self.chat, "usage") else None,
         }
 
+    # ------------------------------------------------- decision-relevant laws
+    def _first_decision(self, instance, obj, law):
+        """Root macro and root scores of the planner at the initial state under ``law`` alone."""
+        from strata.core.types import Hypothesis, HypothesisSet
+        from strata.domains.im import env as im_env
+
+        cfg = self.config
+        if hasattr(law, "reset_gate"):
+            law.reset_gate()
+        planner = MCTSPlanner(OperatorLibrary.standard(instance.domain), n_sims=cfg.decision_sims,
+                              M_leaf=max(1, cfg.M // 2), seed=cfg.seed, T=instance.T, tree=cfg.tree)
+        belief = Belief(HypothesisSet([Hypothesis(law, 0.0, 1.0, 0)], np.zeros((1, 1), np.int64)),
+                        instance.domain)
+        state = (im_env.make_state(obj, M=1, budget_left=instance.B) if instance.domain == "im"
+                 else obj.reset(M=1))
+        macro = planner.choose(obj, state, belief, 0)
+        info = planner.last_info
+        scores = {(m.op, int(m.region), int(m.k)): float(s)
+                  for m, s in zip(info.get("macros", []), np.ravel(info.get("scores", [])))}
+        return (macro.op, int(macro.region), int(macro.k)), scores
+
+    def _decision_alternatives(self, instance, obj, ctx, train, val):
+        """Alternative mixtures that fit the logs about as well but change the first decision.
+
+        An alternative counts only when, under its own planner, its chosen macro
+        beats the best mixture's macro by ``decision_margin`` (relative), so
+        near-ties of the planner are not mistaken for different decisions.
+        Optionally one LLM round writes experts that tell such mixtures apart,
+        after which the mixture and its alternatives are refitted once.
+        """
+        from strata.laws import mixture
+
+        cfg, domain = self.config, instance.domain
+
+        def changing(ctx):
+            base, _ = self._first_decision(instance, obj, ctx.law)
+            alts = ctx.alternatives(eps=cfg.eps, n_boot=cfg.mix_boot, seed=cfg.seed)
+            keep = {}
+            for alt in sorted(alts, key=lambda a: -float(a.ll_val)):
+                macro, scores = self._first_decision(instance, obj, alt)
+                if macro == base or macro in keep:
+                    continue
+                own, other = scores.get(macro), scores.get(base)
+                if own is not None and other is not None and \
+                        own - other <= cfg.decision_margin * max(abs(own), 1e-9):
+                    continue
+                keep[macro] = alt
+            return base, alts, keep
+
+        base, alts, keep = changing(ctx)
+        rep: Dict[str, Any] = {"base_macro": list(base), "alternatives": len(alts),
+                               "decision_changing": [list(m) for m in keep]}
+        laws = [ctx.law]
+        if keep and self.chat is not None and cfg.mix_disagree_round:
+            table = mixture.disagreement_table(domain, ctx.law, list(keep.values()), train, obj)
+            new, call_rep = llm_propose.discriminating_experts(
+                domain, train, val, obj, self.chat, table, k=cfg.llm_k, seed=cfg.seed)
+            rep["disagreement_round"] = call_rep
+            if new:
+                contexts, mrep = mixture.build_mixtures(domain, list(ctx.pool.experts) + new,
+                                                        train, val, obj, seed=cfg.seed)
+                rep["refit"] = mrep
+                if contexts and contexts[0].val_ll >= ctx.val_ll:
+                    ctx = contexts[0]
+                    laws = [ctx.law] + new
+                    base, alts, keep = changing(ctx)
+                    rep.update({"base_macro_after": list(base), "alternatives_after": len(alts),
+                                "decision_changing_after": [list(m) for m in keep]})
+        return laws + list(keep.values()), rep
+
     # -------------------------------------------------------------- policy API
     def reset(self, instance, rng):
         if self._key != instance.name:
             self.build(instance)
+        for h in self.hset.hyps:  # per-episode latent state (node gates) starts from the logs
+            if hasattr(h.law, "reset_gate"):
+                h.law.reset_gate()
         self.belief = Belief(self.hset, self.domain)
         self.records = []
 
@@ -222,6 +307,8 @@ def make_strata_methods():
         "strata-maxmin": {"mode": "maxmin"},
         # a single hypothesis needs no belief updates (RPP drift laws have no logpdf)
         "strata-true": {"true_law": True, "operator_source": "hand", "no_belief": True},
+        "strata-poe": {"law_mixture": "poe", "llm_k": 5},
+        "strata-mix": {"law_mixture": "mix", "llm_k": 5},
         "strata-fulltree": {"tree": "full"},
         "strata-true-fulltree": {"true_law": True, "operator_source": "hand", "tree": "full"},
     }

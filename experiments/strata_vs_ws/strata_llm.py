@@ -19,7 +19,7 @@ import time
 
 import numpy as np
 
-from strata.agent import StrataAgent
+from strata.agent import StrataAgent, make_strata_methods
 from strata.baselines import model_based
 from strata.eval import protocol
 from strata.llm import Chat
@@ -43,6 +43,10 @@ def main(argv=None):
     parser.add_argument("--n-sims", type=int, default=150)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--tag", default="llm")
+    parser.add_argument("--variant", default="strata",
+                        help="STRATA variant from make_strata_methods (e.g. strata-poe)")
+    parser.add_argument("--temperature", type=float, default=None,
+                        help="LLM sampling temperature (default: the endpoint's)")
     parser.add_argument("--out-dir", default="out/compare_im")
     args = parser.parse_args(argv)
 
@@ -58,7 +62,8 @@ def main(argv=None):
             oracle = protocol.evaluate(
                 model_based.Oracle(logs, selection_episodes=args.selection_episodes, seed=args.seed),
                 instance, episodes=args.episodes, seed=args.seed)
-            agent = StrataAgent(logs, chat=Chat(), seed=args.seed, n_sims=args.n_sims)
+            agent = StrataAgent(logs, chat=Chat(temperature=args.temperature), seed=args.seed,
+                                n_sims=args.n_sims, **make_strata_methods()[args.variant])
             start = time.time()
             agent.build(instance)
             build_seconds = time.time() - start

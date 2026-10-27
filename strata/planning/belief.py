@@ -193,6 +193,9 @@ class Belief:
             p = np.clip(p, PROB_EPS, 1.0 - PROB_EPS)
             per = np.where(y, np.log(p), np.log(1.0 - p))
             out[i] = float(np.where(eligible, per, 0.0).sum())
+            # laws with latent per-node state (gated mixtures) update it after scoring
+            if hasattr(law, "observe_round"):
+                law.observe_round(feats, y[0], eligible[0])
 
             E_next = np.where(y, 0.0, E_now)
             E_next[np.asarray(after.status) != STATUS_INACTIVE] = 0.0
