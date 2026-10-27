@@ -15,7 +15,9 @@ episode seeds (common random numbers).  The output is one CSV row per
 Methods: ``flat-hub*``, ``flat-any*``, ``wc-default``, ``libA``, ``libB``,
 ``libC``, ``oracle``, ``ws-option``, ``greedy``, ``ga``.  ``ws-option`` is skipped
 (with a warning) when PyTorch / the original agent files cannot be imported;
-``greedy`` and ``ga`` (the WS-Option paper's RPP baselines) are RPP-only.
+``greedy`` and ``ga`` (the WS-Option paper's RPP baselines) are RPP-only;
+``ddic*``, ``imm-rr*`` and ``ada-greedy*`` (classic adaptive IM) are IM-only;
+``dqn`` is a flat (non-hierarchical) S2V-style DQN trained on the instance.
 """
 
 from __future__ import annotations
@@ -44,6 +46,10 @@ METHODS = (
     "ws-option",
     "greedy",
     "ga",
+    "ddic*",
+    "imm-rr*",
+    "ada-greedy*",
+    "dqn",
 )
 
 CSV_FIELDS = (
@@ -130,6 +136,17 @@ def _make_policy(method: str, instance, logs, args):
         if not ws_option.available():
             return None
         return ws_option.WSOptionPolicy(seed=args.seed)
+    if method == "dqn":
+        from strata.baselines import flat_dqn
+
+        return flat_dqn.FlatDQNPolicy(seed=args.seed)
+    if method in ("ddic*", "imm-rr*", "ada-greedy*"):
+        if domain != "im":
+            return None  # classic adaptive influence-maximisation baselines
+        from strata.baselines import im_classic
+
+        return im_classic.make_policy(method, instance, seed=args.seed,
+                                      selection_episodes=args.selection_episodes)
     if method in ("greedy", "ga"):
         if domain != "rpp":
             return None  # the paper's GA / greedy baselines are RPP-only
